@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вычисление геодезических координат по координатам Гаусса – Крюгера | GEOPOINT</title>
+    <title>Вычисление геодезических координат | GEOPOINT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/300.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/400.css" rel="stylesheet">
@@ -104,30 +104,19 @@
             overflow-x: auto;
         }
         .formula-title {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             color: #3166FF;
-            margin-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
         }
         .formula-line {
             display: block;
-            padding: 0.15rem 0;
+            padding: 0.25rem 0;
             font-family: 'Times New Roman', serif;
             font-size: 1.25rem;
             color: #1e293b;
-            text-align: center;
-            line-height: 2;
-        }
-        .formula-line + .formula-line { margin-top: 0.15rem; }
-        .formula-line.wide {
-            font-size: 1.05rem;
-            line-height: 1.85;
-            white-space: nowrap;
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
             text-align: center;
         }
         .frac {
@@ -138,10 +127,47 @@
             margin: 0 0.25em;
             font-size: 0.9em;
         }
-        .frac > span { display: block; padding: 0.1em 0.35em; text-align: center; }
+        .frac > span { display: block; padding: 0.15em 0.3em; text-align: center; }
         .frac span.bottom { border-top: 1.5px solid #1e293b; }
-        .math-group { display: inline; white-space: normal; }
+        .sqrt {
+            border-top: 1.5px solid #1e293b;
+            padding-left: 3px;
+            margin-left: 3px;
+        }
         sup, sub { font-size: 0.75em; }
+        .step-list {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+            counter-reset: step;
+        }
+        .step-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.25rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.95rem;
+            color: #334155;
+            line-height: 1.55;
+        }
+        .step-list li:last-child { border-bottom: none; }
+        .step-list li::before {
+            content: counter(step);
+            counter-increment: step;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3166FF;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
         .figure-img {
             width: 100%;
             max-width: min(560px, 90vw);
@@ -172,6 +198,14 @@
         }
         .figure-legend-text { font-size: 0.85rem; color: #475569; line-height: 1.4; }
         .figure-legend-text strong { color: #0f172a; }
+        .case-box {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid;
+        }
+        .case-box.blue { background: #EFF6FF; border-color: #BFDBFE; }
+        .case-box.green { background: #F0FDF4; border-color: #BBF7D0; }
+        .case-box.orange { background: #FFF7ED; border-color: #FED7AA; }
         .denotations-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -204,8 +238,27 @@
         }
         .denotation-icon.blue-icon { background: #3166FF; box-shadow: 0 4px 10px rgba(49,102,255,0.3); }
         .denotation-icon.green-icon { background: #10B981; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
-        .denotation-title { font-weight: 700; font-size: 1rem; color: #0f172a; margin-bottom: 0.2rem; }
-        .denotation-text { font-size: 0.85rem; color: #64748B; line-height: 1.4; }
+        .denotation-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0f172a;
+            margin-bottom: 0.2rem;
+        }
+        .denotation-text {
+            font-size: 0.85rem;
+            color: #64748B;
+            line-height: 1.4;
+        }
+        .related-link {
+            display: block;
+            padding: 1rem 1.25rem;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.75rem;
+            transition: all .2s ease;
+            text-decoration: none;
+        }
+        .related-link:hover { background: #EFF6FF; border-color: #BFDBFE; }
         .expandable-section {
             border-radius: 1rem;
             overflow: hidden;
@@ -236,9 +289,17 @@
         .expandable-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); color: #fff; }
         .expandable-title { font-weight: 700; font-size: 1rem; color: #0f172a; }
         .expandable-subtitle { font-size: .8rem; color: #94A3B8; }
-        .expandable-arrow { margin-left: auto; transition: transform .3s ease; color: #94A3B8; }
+        .expandable-arrow {
+            margin-left: auto;
+            transition: transform .3s ease;
+            color: #94A3B8;
+        }
         .expandable-section.open .expandable-arrow { transform: rotate(180deg); color: #FF6B31; }
-        .expandable-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; }
+        .expandable-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .4s ease;
+        }
         .expandable-section.open .expandable-body { max-height: 10000px; }
         .expandable-body-inner { padding: 0 1.5rem 1.5rem; }
         @media (max-width: 640px) {
@@ -260,7 +321,7 @@
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="Главная страница.html" class="nav-link text-base font-semibold">Главная</a>
                     <a href="Главная страница.html#calculators" class="nav-link text-base font-semibold">Калькуляторы</a>
-                    <a href="Теория.html" class="nav-link nav-link-active text-base font-semibold">Теория</a>
+                    <a href="theory.html" class="nav-link nav-link-active text-base font-semibold">Теория</a>
                     <a href="О проекте.html" class="nav-link text-base font-semibold">О проекте</a>
                     <a href="Справка.html" class="nav-link text-base font-semibold">Справка</a>
                 </div>
@@ -271,12 +332,12 @@
     <main class="pt-32 pb-20 px-4">
         <div class="max-w-6xl mx-auto pt-0 pb-6">
             <div class="bg-geo-blue rounded-3xl p-8 mb-8 text-white shadow-lg">
-                <a href="Теория.html" class="back-link mb-6">
+                <a href="theory.html" class="back-link mb-6">
                     <i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i>
                     НАЗАД К ТЕМАМ
                 </a>
-                <h1 class="hero-title section-title max-w-6xl mb-4">ВЫЧИСЛЕНИЕ ГЕОДЕЗИЧЕСКИХ КООРДИНАТ<br>ПО ПЛОСКИМ ПРЯМОУГОЛЬНЫМ КООРДИНАТАМ<br>ГАУССА – КРЮГЕРА</h1>
-                <p class="text-blue-100 text-[1.1rem] max-w-6xl leading-relaxed">Обратное преобразование плоских прямоугольных координат (x′, y′) в геодезические координаты (B, L) на поверхности референц-эллипсоида</p>
+                <h1 class="hero-title section-title max-w-6xl mb-4">ВЫЧИСЛЕНИЕ ГЕОДЕЗИЧЕСКИХ ПРОСТРАНСТВЕННЫХ КООРДИНАТ</h1>
+                <p class="text-blue-100 text-[1.1rem] max-w-6xl leading-relaxed">Обратное преобразование от прямоугольных пространственных координат (X, Y, Z) к геодезическим координатам (B, L, H) на поверхности референц-эллипсоида</p>
             </div>
 
             <!-- Введение -->
@@ -287,14 +348,14 @@
                     </div>
                     <div>
                         <h2 class="text-xl font-bold text-slate-900">ВВЕДЕНИЕ</h2>
-                        <p class="text-sm text-slate-500 mt-1">Обратная задача проекции Гаусса – Крюгера</p>
+                        <p class="text-sm text-slate-500 mt-1">Обратное преобразование координат</p>
                     </div>
                 </div>
                 <p class="text-slate-600 mb-4 leading-relaxed">
-                    Вычисление геодезических координат <strong>B</strong> и <strong>L</strong> по известным плоским прямоугольным координатам Гаусса – Крюгера <strong>x′</strong> и <strong>y′</strong> является обратной задачей по отношению к прямому преобразованию геодезических координат в плоские. Данная задача возникает при обработке полевых измерений, переводе данных из кадастровых и топографических источников в геодезические системы координат, а также при решении геодезических задач на эллипсоиде.
+                    Обратное преобразование от пространственных прямоугольных координат <strong>X, Y, Z</strong> к геодезическим <strong>B, L, H</strong> является более сложной задачей по сравнению с прямым переходом, поскольку требует решения нелинейных уравнений относительно широты и высоты.
                 </p>
                 <p class="text-slate-600 leading-relaxed">
-                    В отличие от прямого преобразования, обратное не имеет замкнутого аналитического решения и требует применения итерационных или разложенных в ряд методов. В геодезической практике наибольшее распространение получил метод, основанный на разложении в ряд по степеням эксцентриситета эллипсоида с использованием вспомогательной широты <strong>B<sub>x</sub></strong>.
+                    В то время как прямые формулы позволяют вычислить X, Y, Z непосредственно, обратная задача решается итерационными методами. Наиболее распространённым является итерационный способ К.А. Лапинга, обеспечивающий быструю сходимость при заданной точности.
                 </p>
             </div>
 
@@ -306,220 +367,212 @@
                     </div>
                     <div>
                         <h2 class="text-xl font-bold text-slate-900">ГЕОМЕТРИЧЕСКАЯ ИНТЕРПРЕТАЦИЯ</h2>
-                        <p class="text-sm text-slate-500 mt-1">Связь плоских и геодезических координат</p>
+                        <p class="text-sm text-slate-500 mt-1">Взаимосвязь систем координат в пространстве</p>
                     </div>
                 </div>
 
                 <figure class="my-6 text-center bg-slate-50 border border-slate-200 rounded-2xl p-6">
-                    <img src="assets/gauss-BLH-xy.svg" alt="Геометрическая схема обратного преобразования координат" class="figure-img mx-auto" width="320" height="320" loading="lazy">
-                    <figcaption class="text-sm text-slate-500 mt-4">Рис. 1 — Геометрическая схема обратного преобразования координат в проекции Гаусса – Крюгера</figcaption>
+                    <img src="assets/geodesic-to-spatial-coords.svg" alt="Связь геодезических и прямоугольных пространственных координат" class="figure-img mx-auto" width="320" height="320" loading="lazy">
+                    <figcaption class="text-sm text-slate-500 mt-4">Рис. 1 — Связь геодезических и прямоугольных пространственных координат на поверхности земного эллипсоида</figcaption>
                 </figure>
 
                 <p class="text-xs font-bold uppercase tracking-wide text-slate-500 text-center mb-3">Обозначения на рисунке</p>
                 <div class="figure-legend-grid mb-6">
                     <div class="figure-legend-item">
                         <div class="figure-legend-symbol">O</div>
-                        <div class="figure-legend-text"><strong>Начало координат</strong> — пересечение осей плоской системы.</div>
+                        <div class="figure-legend-text"><strong>Начало координат</strong> — центр эллипсоида; пересечение осей OX, OY и OZ.</div>
                     </div>
                     <div class="figure-legend-item">
                         <div class="figure-legend-symbol">K</div>
-                        <div class="figure-legend-text"><strong>Точка на эллипсоиде</strong> — положение точки в проекции.</div>
+                        <div class="figure-legend-text"><strong>Заданная точка</strong> на поверхности эллипсоида.</div>
                     </div>
                     <div class="figure-legend-item">
-                        <div class="figure-legend-symbol">B<sub>x</sub></div>
-                        <div class="figure-legend-text"><strong>Вспомогательная широта</strong> параллели, соответствующей абсциссе <strong>x</strong>.</div>
+                        <div class="figure-legend-symbol">B</div>
+                        <div class="figure-legend-text"><strong>Геодезическая широта</strong> — угол между плоскостью экватора и нормалью к эллипсоиду.</div>
                     </div>
                     <div class="figure-legend-item">
-                        <div class="figure-legend-symbol">L<sub>0</sub></div>
-                        <div class="figure-legend-text"><strong>Осевой меридиан</strong> шестиградусной зоны.</div>
+                        <div class="figure-legend-symbol">L</div>
+                        <div class="figure-legend-text"><strong>Геодезическая долгота</strong> — двугранный угол между плоскостями начального и данного меридианов.</div>
                     </div>
                     <div class="figure-legend-item">
-                        <div class="figure-legend-symbol">l</div>
-                        <div class="figure-legend-text"><strong>Разность долгот</strong> — отклонение долготы точки от осевого меридиана.</div>
+                        <div class="figure-legend-symbol">H</div>
+                        <div class="figure-legend-text"><strong>Геодезическая высота</strong> — отрезок нормали от поверхности эллипсоида до точки.</div>
                     </div>
                 </div>
 
-                <div class="info-note green" style="margin-top: 0;">
-                    <i data-lucide="circle-check" class="w-5 h-5"></i>
-                    <p>Погрешность вычисления геодезических координат по формулам обратного преобразования не превышает <strong>0,0001″</strong> при разности долгот <strong>l</strong> до 3°30′, что соответствует требованиям к точности геодезических вычислений.</p>
+                <div class="info-note blue" style="margin-top: 0;">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <p>Нормалью к поверхности в заданной точке является перпендикуляр к касательной плоскости в этой точке. Все точки, лежащие на одной нормали, имеют одинаковые геодезические широту и долготу, но различаются по высоте.</p>
                 </div>
             </div>
 
-            <!-- Условные и действительные координаты -->
+            <!-- Определение долготы -->
             <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
                 <div class="flex items-start gap-3 mb-5">
                     <div class="section-heading-icon green">
-                        <i data-lucide="map" class="w-6 h-6"></i>
+                        <i data-lucide="compass" class="w-6 h-6"></i>
                     </div>
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900">НОМЕР ЗОНЫ И ДЕЙСТВИТЕЛЬНЫЕ КООРДИНАТЫ</h2>
-                        <p class="text-sm text-slate-500 mt-1">Переход от условных координат x′, y′ к x, y</p>
+                        <h2 class="text-xl font-bold text-slate-900">ОПРЕДЕЛЕНИЕ ГЕОДЕЗИЧЕСКОЙ ДОЛГОТЫ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Прямая формула через тангенс долготы</p>
                     </div>
                 </div>
 
                 <p class="text-slate-600 mb-4 leading-relaxed">
-                    Номер шестиградусной зоны <strong>n</strong> определяется по условной ординате <strong>y′</strong> путём выделения целой части от деления на 10⁶. Действительные координаты <strong>x</strong>, <strong>y</strong> вычисляются из условных с устранением смещения оси Y на 500 000 м и номера зоны:
+                    Геодезическая долгота <strong>L</strong> вычисляется непосредственно по формуле:
                 </p>
 
                 <div class="formula-card">
-                    <div class="formula-title">Номер зоны и действительные координаты</div>
+                    <div class="formula-title">Формула определения долготы</div>
                     <div class="formula-line">
-                        n = целое <span class="math-group">(</span><span class="frac"><span>y′</span><span class="bottom">10⁶</span></span><span class="math-group">)</span>
-                    </div>
-                    <div class="formula-line">
-                        x = x′
-                    </div>
-                    <div class="formula-line">
-                        y = y′ − n · 10⁶ − 5 · 10⁵
+                        L = arctg <span class="frac"><span>Y</span><span class="bottom">X</span></span>
                     </div>
                 </div>
 
-                <div class="info-note blue">
-                    <i data-lucide="info" class="w-5 h-5"></i>
-                    <p>«Целое» означает процедуру выделения целой части путём отбрасывания дробной части.</p>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Для корректного определения долготы необходимо учитывать четверть расположения точки по знакам координат <strong>X</strong> и <strong>Y</strong>. Выделяются три основных случая:
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="case-box blue">
+                        <h4 class="font-bold text-blue-900 mb-2">Случай 1: X = 0</h4>
+                        <ul class="text-sm text-blue-800 space-y-1">
+                            <li>• Если Y = 0: долгота не определяется (полюс)</li>
+                            <li>• Если Y &gt; 0: L = 90°</li>
+                            <li>• Если Y &lt; 0: L = 270°</li>
+                        </ul>
+                    </div>
+                    <div class="case-box green">
+                        <h4 class="font-bold text-green-900 mb-2">Случай 2: X &gt; 0</h4>
+                        <ul class="text-sm text-green-800 space-y-1">
+                            <li>• Если Y ≥ 0: L = L′</li>
+                            <li>• Если Y &lt; 0: L = 360° − L′</li>
+                        </ul>
+                    </div>
+                    <div class="case-box orange">
+                        <h4 class="font-bold text-orange-900 mb-2">Случай 3: X &lt; 0</h4>
+                        <ul class="text-sm text-orange-800 space-y-1">
+                            <li>• Если Y ≥ 0: L = 180° − L′</li>
+                            <li>• Если Y &lt; 0: L = 180° + L′</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
-            <!-- Вспомогательная широта -->
+            <!-- Итерационный способ Лапинга -->
             <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
                 <div class="flex items-start gap-3 mb-5">
                     <div class="section-heading-icon blue">
-                        <i data-lucide="calculator" class="w-6 h-6"></i>
+                        <i data-lucide="refresh-cw" class="w-6 h-6"></i>
                     </div>
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900">ВСПОМОГАТЕЛЬНАЯ ШИРОТА B<sub>x</sub></h2>
-                        <p class="text-sm text-slate-500 mt-1">Определение широты параллели по абсциссе x</p>
+                        <h2 class="text-xl font-bold text-slate-900">ИТЕРАЦИОННЫЙ СПОСОБ ЛАПИНГА</h2>
+                        <p class="text-sm text-slate-500 mt-1">Вычисление широты и высоты методом последовательных приближений</p>
                     </div>
                 </div>
 
                 <p class="text-slate-600 mb-4 leading-relaxed">
-                    Вспомогательная широта <strong>B<sub>x</sub></strong> определяется через абсциссу <strong>x</strong> с использованием коэффициентов <strong>G₀</strong>, <strong>Q₁</strong>, <strong>Q₂</strong>, <strong>Q₃</strong>:
+                    Наиболее удачный итерационный способ решения задачи был предложен К.А. Лапингом на заре использования ИСЗ в геодезии. Метод основан на построении итерационного процесса для определения геодезической широты.
                 </p>
 
-                <div class="formula-card">
-                    <div class="formula-title">Вспомогательный угол β</div>
-                    <div class="formula-line">
-                        β = <span class="frac"><span>x</span><span class="bottom">(1 − e²) · a · G₀</span></span>
-                    </div>
-                </div>
-
-                <div class="formula-card">
-                    <div class="formula-title">Вспомогательная широта</div>
-                    <div class="formula-line wide">
-                        B<sub>x</sub> = β + Q₁ sin 2β + Q₂ sin 4β + Q₃ sin 6β
-                    </div>
-                </div>
-
-                <div class="formula-card">
-                    <div class="formula-title">Коэффициент G₀</div>
-                    <div class="formula-line wide">
-                        G₀ = 1 + <span class="frac"><span>3</span><span class="bottom">4</span></span> e²
-                        + <span class="frac"><span>45</span><span class="bottom">64</span></span> e⁴
-                        + <span class="frac"><span>175</span><span class="bottom">256</span></span> e⁶
-                        + <span class="frac"><span>11025</span><span class="bottom">16384</span></span> e⁸ + …
-                    </div>
-                </div>
-
-                <div class="formula-card">
-                    <div class="formula-title">Коэффициенты Q₁ – Q₃</div>
-                    <div class="formula-line wide">
-                        Q₁ = <span class="frac"><span>3</span><span class="bottom">8</span></span> e²
-                        + <span class="frac"><span>3</span><span class="bottom">16</span></span> e⁴
-                        + <span class="frac"><span>213</span><span class="bottom">4096</span></span> e⁶ + …
-                    </div>
-                    <div class="formula-line wide">
-                        Q₂ = <span class="frac"><span>21</span><span class="bottom">256</span></span> e⁴
-                        + <span class="frac"><span>21</span><span class="bottom">256</span></span> e⁶ + …
-                    </div>
-                    <div class="formula-line">
-                        Q₃ = <span class="frac"><span>151</span><span class="bottom">6144</span></span> e⁶ + …
-                    </div>
-                </div>
-            </div>
-
-            <!-- Широта B и разность долгот l -->
-            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
-                <div class="flex items-start gap-3 mb-5">
-                    <div class="section-heading-icon purple">
-                        <i data-lucide="sigma" class="w-6 h-6"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-900">ГЕОДЕЗИЧЕСКАЯ ШИРОТА B И РАЗНОСТЬ ДОЛГОТ l</h2>
-                        <p class="text-sm text-slate-500 mt-1">Уточнение B и вычисление l через B<sub>x</sub></p>
-                    </div>
-                </div>
-
+                <h3 class="text-lg font-bold text-slate-900 mb-3">Начальное приближение</h3>
                 <p class="text-slate-600 mb-4 leading-relaxed">
-                    Геодезическая широта <strong>B</strong> и разность долгот <strong>l</strong> вычисляются через вспомогательную широту <strong>B<sub>x</sub></strong> с использованием радиуса кривизны первого вертикала <strong>N<sub>x</sub></strong>, вычисленного по широте <strong>B<sub>x</sub></strong>:
+                    Для получения начального значения широты B<sup>(1)</sup> временно предполагается, что геодезическая высота равна нулю:
                 </p>
 
                 <div class="formula-card">
-                    <div class="formula-title">Геодезическая широта</div>
-                    <div class="formula-line wide">
-                        B = B<sub>x</sub> − <span class="frac"><span>y² (1 + η<sub>x</sub>²) tg B<sub>x</sub></span><span class="bottom">2 N<sub>x</sub>²</span></span>
-                        ρ <span class="math-group">{ 1 − </span><span class="frac"><span>y²</span><span class="bottom">12 N<sub>x</sub>²</span></span>
-                        <span class="math-group">(5 + 3 tg² B<sub>x</sub> + η<sub>x</sub>² − 9 η<sub>x</sub>² tg B<sub>x</sub>) + </span><span class="frac"><span>y⁴</span><span class="bottom">360 N<sub>x</sub>⁴</span></span>
-                        <span class="math-group">(61 + 90 tg² B<sub>x</sub> + 45 tg⁴ B<sub>x</sub>) + … }</span>
-                    </div>
-                </div>
-
-                <div class="formula-card">
-                    <div class="formula-title">Разность долгот</div>
-                    <div class="formula-line wide">
-                        l = <span class="frac"><span>y</span><span class="bottom">N<sub>x</sub> cos B<sub>x</sub></span></span>
-                        ρ <span class="math-group">{ 1 − </span><span class="frac"><span>y²</span><span class="bottom">6 N<sub>x</sub>²</span></span>
-                        <span class="math-group">(1 + 2 tg² B<sub>x</sub> + η<sub>x</sub>²) + </span><span class="frac"><span>y⁴</span><span class="bottom">120 N<sub>x</sub>⁴</span></span>
-                        <span class="math-group">(5 + 28 tg² B<sub>x</sub> + 24 tg⁴ B<sub>x</sub> + 6 η<sub>x</sub>² + 8 η<sub>x</sub>² tg² B<sub>x</sub>) + … }</span>
-                    </div>
-                </div>
-
-                <p class="text-slate-600 leading-relaxed">
-                    где <strong>η<sub>x</sub>² = e′² cos² B<sub>x</sub></strong>, <strong>ρ = 206264,8062″</strong> — число секунд в радиане.
-                </p>
-            </div>
-
-            <!-- Геодезическая долгота -->
-            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
-                <div class="flex items-start gap-3 mb-5">
-                    <div class="section-heading-icon green">
-                        <i data-lucide="globe" class="w-6 h-6"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-900">ГЕОДЕЗИЧЕСКАЯ ДОЛГОТА L</h2>
-                        <p class="text-sm text-slate-500 mt-1">Долгота осевого меридиана и итоговая долгота точки</p>
-                    </div>
-                </div>
-
-                <p class="text-slate-600 mb-4 leading-relaxed">
-                    Долгота осевого меридиана <strong>L₀</strong> шестиградусной зоны вычисляется по номеру зоны <strong>n</strong>, а геодезическая долгота <strong>L</strong> точки определяется как сумма:
-                </p>
-
-                <div class="formula-card">
-                    <div class="formula-title">Долгота осевого меридиана и геодезическая долгота</div>
+                    <div class="formula-title">Формула начального приближения широты</div>
                     <div class="formula-line">
-                        L₀ = 6° · n − 3°
-                    </div>
-                    <div class="formula-line">
-                        L = L₀ + l
+                        tg B<sup>(1)</sup> = <span class="frac"><span>Z</span><span class="bottom">Q · (1 − e²)</span></span>
                     </div>
                 </div>
 
-                <div class="info-note blue">
+                <div class="formula-card">
+                    <div class="formula-title">Вычисление расстояния Q</div>
+                    <div class="formula-line">
+                        Q = √<span class="sqrt">X² + Y²</span>
+                    </div>
+                </div>
+
+                <div class="info-note blue" style="margin-top: 0;">
                     <i data-lucide="info" class="w-5 h-5"></i>
-                    <p>Для трёхградусных зон долгота осевого меридиана вычисляется по формуле <strong>L₀ = 3° · n′</strong>, где <strong>n′</strong> — номер трёхградусной зоны.</p>
+                    <p>Рассмотрение формулы начального приближения указывает на существование двух особых случаев: <strong>при Z = 0</strong> точка находится в плоскости экватора и B = 0, H = Q − a; <strong>при Q = 0</strong> точка лежит на оси Z, B = ±90°, H = |Z| − b.</p>
                 </div>
-            </div>
 
-            <!-- Обозначения в формулах -->
-            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
-                <div class="expandable-section">
+                <h3 class="text-lg font-bold text-slate-900 mb-3 mt-6">Итерационный процесс</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    В каждой итерации (i = 1, 2, 3, …) последовательно вычисляются следующие величины:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Первая сфероидическая функция</div>
+                    <div class="formula-line">W<sup>(i)</sup> = √<span class="sqrt">1 − e² · sin² B<sup>(i)</sup></span></div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Радиус кривизны первого вертикала</div>
+                    <div class="formula-line">N<sup>(i)</sup> = <span class="frac"><span>a</span><span class="bottom">W<sup>(i)</sup></span></span></div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Вспомогательная величина T</div>
+                    <div class="formula-line">T<sup>(i)</sup> = Z + e² · N<sup>(i)</sup> · sin B<sup>(i)</sup></div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Новое приближение широты</div>
+                    <div class="formula-line">tg B<sup>(i+1)</sup> = <span class="frac"><span>T<sup>(i)</sup></span><span class="bottom">Q</span></span></div>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-900 mb-3 mt-6">Критерий окончания</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Итерационный процесс продолжается до достижения заданной точности сходимости:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Условие окончания</div>
+                    <div class="formula-line">|B<sup>(i+1)</sup> − B<sup>(i)</sup>| ≤ ε<sub>B</sub></div>
+                </div>
+
+                <div class="info-note warn">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <p>Величина ε<sub>B</sub> задаётся пользователем и обычно принимается равной 0,0001″. При выполнении условия геодезическая широта считается найденной.</p>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-900 mb-3 mt-6">Вычисление геодезической высоты</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    После нахождения широты геодезическую высоту можно вычислить одной из трёх формул:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Формула (1) — через Q</div>
+                    <div class="formula-line">H<sub>г</sub> = <span class="frac"><span>Q</span><span class="bottom">cos B</span></span> − N</div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Формула (2) — через Z</div>
+                    <div class="formula-line">H<sub>г</sub> = <span class="frac"><span>Z</span><span class="bottom">sin B</span></span> − N · (1 − e²)</div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Формула (3) — универсальная</div>
+                    <div class="formula-line">H<sub>г</sub> = Q · cos B + Z · sin B − N · (1 − e² · sin² B)</div>
+                </div>
+
+                <div class="info-note green">
+                    <i data-lucide="lightbulb" class="w-5 h-5"></i>
+                    <p><strong>Рекомендация:</strong> предпочтительнее использовать универсальную формулу (3), так как она позволяет определить геодезическую высоту с меньшей погрешностью во всех точках пространства. На экваторе и полюсах погрешность равна погрешности пространственных координат, а на широте 45° она может достигать 1,33 · m<sub>X</sub>.</p>
+                </div>
+
+                <!-- Обозначения в формулах -->
+                <div class="expandable-section mb-0 mt-6">
                     <div class="expandable-header" onclick="toggleSection(this)">
                         <div class="expandable-icon orange">
                             <i data-lucide="type" class="w-5 h-5"></i>
                         </div>
                         <div>
                             <div class="expandable-title">ОБОЗНАЧЕНИЯ В ФОРМУЛАХ</div>
-                            <div class="expandable-subtitle">Символы и параметры преобразования x′, y′ → B, L</div>
+                            <div class="expandable-subtitle">Символы и параметры, используемые в формулах преобразования XYZ → BLH</div>
                         </div>
                         <i data-lucide="chevron-down" class="expandable-arrow w-5 h-5"></i>
                     </div>
@@ -527,115 +580,94 @@
                         <div class="expandable-body-inner">
                             <div class="denotations-grid">
                                 <div class="denotation-item">
-                                    <div class="denotation-icon">x′, y′</div>
+                                    <div class="denotation-icon">X</div>
                                     <div>
-                                        <div class="denotation-title">Условные плоские координаты</div>
-                                        <div class="denotation-text">Координаты Гаусса – Крюгера с учётом смещения и номера зоны, м</div>
+                                        <div class="denotation-title">Пространственная абсцисса</div>
+                                        <div class="denotation-text">Координата точки вдоль оси X (в метрах)</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
-                                    <div class="denotation-icon blue-icon">x, y</div>
+                                    <div class="denotation-icon blue-icon">Y</div>
                                     <div>
-                                        <div class="denotation-title">Действительные плоские координаты</div>
-                                        <div class="denotation-text">Координаты без смещения 500 000 м и номера зоны</div>
+                                        <div class="denotation-title">Пространственная ордината</div>
+                                        <div class="denotation-text">Координата точки вдоль оси Y (в метрах)</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
-                                    <div class="denotation-icon green-icon">n</div>
+                                    <div class="denotation-icon green-icon">Z</div>
                                     <div>
-                                        <div class="denotation-title">Номер зоны</div>
-                                        <div class="denotation-text">Номер шестиградусной координатной зоны</div>
+                                        <div class="denotation-title">Пространственная аппликата</div>
+                                        <div class="denotation-text">Координата точки вдоль оси Z (в метрах)</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
                                     <div class="denotation-icon">B</div>
                                     <div>
                                         <div class="denotation-title">Геодезическая широта</div>
-                                        <div class="denotation-text">Широта точки на эллипсоиде</div>
+                                        <div class="denotation-text">Угол между нормалью к эллипсоиду и плоскостью экватора</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
                                     <div class="denotation-icon blue-icon">L</div>
                                     <div>
                                         <div class="denotation-title">Геодезическая долгота</div>
-                                        <div class="denotation-text">Долгота точки на эллипсоиде</div>
+                                        <div class="denotation-text">Двугранный угол между меридианами</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
-                                    <div class="denotation-icon green-icon">L<sub>0</sub></div>
+                                    <div class="denotation-icon green-icon">H</div>
                                     <div>
-                                        <div class="denotation-title">Долгота осевого меридиана</div>
-                                        <div class="denotation-text">Центральный меридиан шестиградусной зоны, градусы</div>
+                                        <div class="denotation-title">Геодезическая высота</div>
+                                        <div class="denotation-text">Расстояние от точки по нормали до поверхности эллипсоида</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
-                                    <div class="denotation-icon">l</div>
+                                    <div class="denotation-icon">Q</div>
                                     <div>
-                                        <div class="denotation-title">Разность долгот</div>
-                                        <div class="denotation-text">l = L − L<sub>0</sub></div>
+                                        <div class="denotation-title">Расстояние в плоскости экватора</div>
+                                        <div class="denotation-text">Q = √(X² + Y²) — проекция точки на плоскость экватора</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
-                                    <div class="denotation-icon blue-icon">B<sub>x</sub></div>
-                                    <div>
-                                        <div class="denotation-title">Вспомогательная широта</div>
-                                        <div class="denotation-text">Широта параллели, соответствующей абсциссе x</div>
-                                    </div>
-                                </div>
-                                <div class="denotation-item">
-                                    <div class="denotation-icon green-icon">N<sub>x</sub></div>
+                                    <div class="denotation-icon blue-icon">N</div>
                                     <div>
                                         <div class="denotation-title">Радиус кривизны первого вертикала</div>
-                                        <div class="denotation-text">Вычисленный по широте B<sub>x</sub></div>
+                                        <div class="denotation-text">N = a / W — расстояние по нормали до оси вращения</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
-                                    <div class="denotation-icon">a</div>
+                                    <div class="denotation-icon green-icon">W</div>
                                     <div>
-                                        <div class="denotation-title">Большая полуось эллипсоида</div>
-                                        <div class="denotation-text">Размерный параметр референц-эллипсоида, м</div>
+                                        <div class="denotation-title">Первая сфероидическая функция</div>
+                                        <div class="denotation-text">W = √(1 − e² · sin² B)</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
-                                    <div class="denotation-icon blue-icon">e²</div>
-                                    <div>
-                                        <div class="denotation-title">Квадрат первого эксцентриситета</div>
-                                        <div class="denotation-text">e² = (a² − b²) / a²</div>
-                                    </div>
-                                </div>
-                                <div class="denotation-item">
-                                    <div class="denotation-icon green-icon">e′²</div>
-                                    <div>
-                                        <div class="denotation-title">Квадрат второго эксцентриситета</div>
-                                        <div class="denotation-text">e′² = e² / (1 − e²)</div>
-                                    </div>
-                                </div>
-                                <div class="denotation-item">
-                                    <div class="denotation-icon">η<sub>x</sub>²</div>
-                                    <div>
-                                        <div class="denotation-title">Вторая сфероидическая функция</div>
-                                        <div class="denotation-text">η<sub>x</sub>² = e′² cos² B<sub>x</sub></div>
-                                    </div>
-                                </div>
-                                <div class="denotation-item">
-                                    <div class="denotation-icon blue-icon">T<sub>x</sub></div>
+                                    <div class="denotation-icon">T</div>
                                     <div>
                                         <div class="denotation-title">Вспомогательная величина</div>
-                                        <div class="denotation-text">T<sub>x</sub> = tg² B<sub>x</sub></div>
+                                        <div class="denotation-text">T = Z + e² · N · sin B — используется в итерациях</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
-                                    <div class="denotation-icon green-icon">ρ</div>
+                                    <div class="denotation-icon blue-icon">a</div>
                                     <div>
-                                        <div class="denotation-title">Число секунд в радиане</div>
-                                        <div class="denotation-text">ρ = 206264,8062″</div>
+                                        <div class="denotation-title">Большая полуось эллипсоида</div>
+                                        <div class="denotation-text">Основной размерный параметр референц-эллипсоида (в метрах)</div>
                                     </div>
                                 </div>
                                 <div class="denotation-item">
-                                    <div class="denotation-icon">G₀</div>
+                                    <div class="denotation-icon green-icon">e²</div>
                                     <div>
-                                        <div class="denotation-title">Коэффициенты ряда</div>
-                                        <div class="denotation-text">G₀, Q₁…Q₃ — коэффициенты обратного разложения дуги меридиана</div>
+                                        <div class="denotation-title">Первый эксцентриситет</div>
+                                        <div class="denotation-text">Квадрат первого эксцентриситета эллипсоида</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">ε<sub>B</sub></div>
+                                    <div>
+                                        <div class="denotation-title">Точность сходимости</div>
+                                        <div class="denotation-text">Допустимая разность широт между итерациями (обычно 0,0001″)</div>
                                     </div>
                                 </div>
                             </div>
@@ -663,7 +695,7 @@
                     <ul class="space-y-4 text-gray-400">
                         <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
                         <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
-                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="theory.html" class="hover:text-white transition-colors">Теория</a></li>
                         <li><a href="О проекте.html" class="hover:text-white transition-colors">О проекте</a></li>
                         <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
                     </ul>
