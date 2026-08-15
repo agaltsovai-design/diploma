@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Страница не найдена | GEOPOINT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'geo-lime': '#8BAF36',
+                        'geo-purple': '#A437C6',
+                        'geo-orange': '#FF6B31',
+                        'geo-blue': '#3166FF',
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+            overflow-x: hidden;
+        }
+        .error-section {
+            background: linear-gradient(135deg, #1E3A8A 0%, #3166FF 50%, #7C3AED 100%);
+            position: relative;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+        }
+        #globe-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .globe-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        /* Twinkling stars effect */
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+        .logo-geo {
+            color: #FF6B31;
+        }
+        .logo-point {
+            color: #3166FF;
+        }
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #3166FF;
+            border-radius: 9999px;
+        }
+        .nav-link {
+            color: #3166FF;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            color: #1E3A8A;
+        }
+        .btn-home {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: 2px solid #3166FF;
+            color: #3166FF;
+            background: transparent;
+            font-weight: 600;
+        }
+        .btn-home:hover {
+            background: #3166FF;
+            color: white;
+            transform: translateY(-2px);
+        }
+        .error-code {
+            font-size: 8rem;
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, #FFFFFF 0%, #E0E7FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+        }
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="fixed w-full top-0 z-50 pt-4 px-4">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-8 py-4 flex justify-between items-center shadow-lg">
+                <!-- Logo Text -->
+                <div class="flex items-center gap-1">
+                    <a href="index.html" class="logo-text">
+                        <span class="logo-geo">GEO</span><span class="logo-point">POINT</span>
+                    </a>
+                </div>
+
+                <!-- Navigation Menu -->
+                <div class="hidden md:flex items-center space-x-10">
+                    <a href="index.html" class="nav-link text-base font-semibold">Главная</a>
+                    <a href="index.html#calculators" class="nav-link text-base font-semibold">Калькуляторы</a>
+                    <a href="theory.html" class="nav-link text-base font-semibold">Теория</a>
+                    <a href="about.html" class="nav-link text-base font-semibold">О проекте</a>
+                    <a href="help.html" class="nav-link text-base font-semibold">Справка</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden text-geo-blue" id="mobileMenuBtn">
+                    <i data-lucide="menu" class="w-7 h-7"></i>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="md:hidden hidden bg-white rounded-2xl mt-2 mx-4 p-4 shadow-lg border border-geo-blue/30" id="mobileMenu">
+            <div class="flex flex-col space-y-3">
+                <a href="index.html" class="nav-link text-base font-semibold py-2">Главная</a>
+                <a href="index.html#calculators" class="nav-link text-base font-semibold py-2">Калькуляторы</a>
+                <a href="theory.html" class="nav-link text-base font-semibold py-2">Теория</a>
+                <a href="about.html" class="nav-link text-base font-semibold py-2">О проекте</a>
+                <a href="help.html" class="nav-link text-base font-semibold py-2">Справка</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Error Section with Globe and Stars -->
+    <section class="error-section">
+        <!-- Twinkling Stars Container -->
+        <div id="stars-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: hidden;"></div>
+        
+        <!-- 3D Wireframe Earth Canvas Container -->
+        <div class="globe-wrapper">
+            <canvas id="globe-canvas"></canvas>
+        </div>
+
+        <!-- Error Content -->
+        <div class="error-container animate-fade-in">
+            <h1 class="error-code mb-4">404</h1>
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Страница не найдена</h2>
+            <p class="text-lg text-white/80 mb-8">
+                К сожалению, страница, которую вы ищете, не существует или была перемещена.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="index.html" class="btn-home bg-white text-geo-blue px-8 py-4 rounded-full font-bold text-lg hover:bg-geo-blue hover:text-white transition-all shadow-xl transform hover:scale-105">
+                    <i data-lucide="home" class="w-5 h-5 mr-2 inline"></i>
+                    Вернуться на главную
+                </a>
+                <a href="index.html#calculators" class="btn-home bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-geo-blue transition-all shadow-xl transform hover:scale-105">
+                    <i data-lucide="calculator" class="w-5 h-5 mr-2 inline"></i>
+                    Перейти к калькуляторам
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Three.js Wireframe Earth Animation with Twinkling Stars -->
+    <script>
+        // Create twinkling stars in the background
+        function createTwinklingStars() {
+            const starsContainer = document.getElementById('stars-container');
+            const numStars = 300;
+
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+
+                // Random position
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+
+                // Random size (1-3px)
+                const size = Math.random() * 2 + 1;
+
+                // Random animation delay for varied twinkling
+                const delay = Math.random() * 2;
+                const duration = Math.random() * 2 + 1;
+
+                star.style.left = x + '%';
+                star.style.top = y + '%';
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.animationDelay = delay + 's';
+                star.style.animationDuration = duration + 's';
+
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Initialize Three.js Scene with Wireframe Earth and Stars
+        function initGlobeScene() {
+            const canvas = document.getElementById('globe-canvas');
+            const scene = new THREE.Scene();
+            const containerWidth = window.innerWidth;
+            const containerHeight = window.innerHeight;
+            const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+
+            renderer.setSize(containerWidth, containerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Create wireframe sphere (Earth-like grid) - WHITE COLOR
+            const sphereGeometry = new THREE.SphereGeometry(3.5, 32, 32);
+            const wireframeMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFFFF, // WHITE color for wireframe
+                wireframe: true,
+                transparent: true,
+                opacity: 0.8
+            });
+            const wireframeSphere = new THREE.Mesh(sphereGeometry, wireframeMaterial);
+            scene.add(wireframeSphere);
+
+            // Create additional grid lines for latitude/longitude effect
+            const latLines = [];
+            const lonLines = [];
+
+            // Latitude lines (horizontal)
+            for (let i = -8; i <= 8; i++) {
+                const latRadius = 3.5 * Math.cos((i * Math.PI) / 18);
+                const latY = 3.5 * Math.sin((i * Math.PI) / 18);
+                const latGeometry = new THREE.RingGeometry(latRadius - 0.01, latRadius + 0.01, 64);
+                const latMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xFFFFFF,
+                    transparent: true,
+                    opacity: 0.4,
+                    side: THREE.DoubleSide
+                });
+                const latLine = new THREE.Mesh(latGeometry, latMaterial);
+                latLine.rotation.x = -Math.PI / 2;
+                latLine.position.y = latY;
+                scene.add(latLine);
+                latLines.push(latLine);
+            }
+
+            // Longitude lines (vertical)
+            for (let i = 0; i < 16; i++) {
+                const lonGeometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(64 * 3);
+
+                for (let j = 0; j < 64; j++) {
+                    const phi = (j / 63) * Math.PI;
+                    const theta = (i / 16) * Math.PI * 2;
+
+                    positions[j * 3] = 3.5 * Math.sin(phi) * Math.cos(theta);
+                    positions[j * 3 + 1] = 3.5 * Math.cos(phi);
+                    positions[j * 3 + 2] = 3.5 * Math.sin(phi) * Math.sin(theta);
+                }
+
+                lonGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const lonMaterial = new THREE.LineBasicMaterial({
+                    color: 0xFFFFFF,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const lonLine = new THREE.Line(lonGeometry, lonMaterial);
+                scene.add(lonLine);
+                lonLines.push(lonLine);
+            }
+
+            // Create TWO orbit rings rotating around the planet
+            function createOrbit(radius, inclination, color, rotationSpeed) {
+                const orbitGeometry = new THREE.RingGeometry(radius - 0.03, radius + 0.03, 128);
+                const orbitMaterial = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide
+                });
+                const orbit = new THREE.Mesh(orbitGeometry, orbitMaterial);
+                orbit.rotation.x = -Math.PI / 2;
+                orbit.rotation.z = inclination;
+                return { mesh: orbit, speed: rotationSpeed };
+            }
+
+            const orbit1 = createOrbit(5, 0.2, 0x8BAF36, 0.002);
+            const orbit2 = createOrbit(6.5, -0.3, 0xFF6B31, -0.0015);
+
+            scene.add(orbit1.mesh, orbit2.mesh);
+
+            // Create LARGER and MORE stars in Three.js (5000 stars, size 0.5)
+            const starGeometry = new THREE.BufferGeometry();
+            const starPositions = new Float32Array(5000 * 3);
+            const starSizes = new Float32Array(5000);
+            const starOpacities = new Float32Array(5000);
+
+            for (let i = 0; i < 5000; i++) {
+                const r = 50 + Math.random() * 100;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+
+                starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                starPositions[i * 3 + 2] = r * Math.cos(phi);
+
+                starSizes[i] = Math.random() * 0.5 + 0.3;
+                starOpacities[i] = Math.random() * 0.5 + 0.3;
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+            starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+            starGeometry.setAttribute('opacity', new THREE.BufferAttribute(starOpacities, 1));
+
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xFFFFFF,
+                size: 0.5,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: true
+            });
+
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+
+            // Camera position
+            camera.position.z = 12;
+
+            // Animation loop - continuous rotation without reset
+            let time = 0;
+            function animate() {
+                requestAnimationFrame(animate);
+                time += 0.01;
+
+                // Rotate wireframe sphere - continuous smooth rotation
+                wireframeSphere.rotation.y += 0.002;
+                wireframeSphere.rotation.x += 0.0005;
+
+                // Rotate orbits - continuous smooth rotation
+                orbit1.mesh.rotation.z += orbit1.speed;
+                orbit2.mesh.rotation.z += orbit2.speed;
+
+                // Rotate stars - continuous smooth rotation
+                stars.rotation.y += 0.0001;
+
+                // Twinkle effect for stars (animate opacity) - continuous sine wave
+                const opacities = stars.geometry.attributes.opacity.array;
+
+                for (let i = 0; i < 5000; i++) {
+                    opacities[i] = 0.3 + 0.7 * Math.sin(time + i);
+                }
+                stars.geometry.attributes.opacity.needsUpdate = true;
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // Handle resize
+            window.addEventListener('resize', () => {
+                const newWidth = window.innerWidth;
+                const newHeight = window.innerHeight;
+                camera.aspect = newWidth / newHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(newWidth, newHeight);
+            });
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            createTwinklingStars();
+            initGlobeScene();
+        });
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
