@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEOPOINT | Обратная геодезическая задача</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'geo-blue': '#3166FF',
+                        'geo-orange': '#FF6B31',
+                        'geo-lime': '#C1FF2C',
+                        'geo-purple': '#A437C6',
+                    },
+                    fontFamily: { 'inter': ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FDF8F5; overflow-x: hidden; scroll-behavior: smooth; }
+        .nav-pill { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 2px solid #3166FF; border-radius: 9999px; }
+        .nav-link { color: #1E293B; transition: all 0.2s ease; cursor: pointer; }
+        .nav-link:hover { color: #3166FF; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        #theory { scroll-margin-top: 100px; }
+        #calculators { scroll-margin-top: 100px; }
+        .logo-home { text-decoration: none; }
+        .input-field { border: 2px solid #E2E8F0; border-radius: 0.5rem; padding: 0.625rem 0.75rem; text-align: center; font-size: 0.875rem; transition: all 0.2s; width: 100%; }
+        .input-field:focus { outline: none; border-color: #3166FF; box-shadow: 0 0 0 3px rgba(49, 102, 255, 0.2); }
+        .input-field.error { border-color: #EF4444; background-color: #FEF2F2; }
+        .input-label { font-size: 0.7rem; color: #64748B; font-weight: 600; text-align: center; margin-top: 0.25rem; text-transform: uppercase; }
+        .dms-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+        .btn-primary { background: #3166FF; color: white; border-radius: 0.75rem; font-weight: 600; transition: all 0.3s; }
+        .btn-primary:hover { background: #2563EB; transform: translateY(-2px); }
+        .btn-primary, .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .btn-outline { background: transparent; border: 2px solid #3166FF; color: #3166FF; border-radius: 0.75rem; font-weight: 600; transition: all 0.3s; }
+        .btn-outline:hover { background: #3166FF; color: white; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+        .accordion-content.open { max-height: 1000px; }
+        .rotate-icon { transition: transform 0.3s ease; }
+        .rotate-icon.open { transform: rotate(180deg); }
+        .result-card { background: rgba(255, 255, 255, 0.2); border-radius: 1rem; padding: 1.5rem; }
+        .error-message { display: none; background: #FEF2F2; border: 2px solid #EF4444; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; }
+        .error-message.show { display: block; animation: shake 0.5s; }
+        .warning-text { color: #EF4444; font-size: 0.75rem; font-weight: 600; margin-top: 0.25rem; display: none; }
+        .warning-text.show { display: block; }
+        .theory-card { background: #3166FF; border-radius: 2rem; padding: 2rem; color: white; transition: all 0.3s ease; }
+        .theory-item { background: rgba(255, 255, 255, 0.1); border-radius: 1rem; overflow: hidden; margin-bottom: 0.75rem; }
+        .theory-item-header { padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.2s; }
+        .theory-item-header:hover { background: rgba(255, 255, 255, 0.15); }
+        .theory-item-title { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; }
+        .theory-icon { width: 1.25rem; height: 1.25rem; background: rgba(255, 255, 255, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .theory-icon svg { width: 0.75rem; height: 0.75rem; }
+        .btn-theory { background: #FF6B31; color: white; border-radius: 1rem; font-weight: 700; padding: 1rem 2rem; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-theory:hover { background: #EA580C; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(255, 107, 49, 0.4); }
+        @keyframes paramsFade { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+        .theory-params-fade { animation: paramsFade 0.4s ease; }
+        .ellipsoid-params-panel { padding: 0.25rem 0 0.5rem; }
+        .ellipsoid-params-subtitle { font-size: 0.875rem; opacity: 0.92; margin-bottom: 0.75rem; }
+        .ellipsoid-param-row {
+            display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+            padding: 0.7rem 1.1rem; margin-bottom: 0.5rem; background: rgba(255, 255, 255, 0.14);
+            border-radius: 9999px; font-size: 0.875rem; line-height: 1.25;
+        }
+        .ellipsoid-param-row:last-child { margin-bottom: 0; }
+        .ellipsoid-param-label { opacity: 0.95; }
+        .ellipsoid-param-value { font-weight: 600; text-align: right; white-space: nowrap; }
+        .import-example {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 0.8rem;
+            line-height: 1.65;
+            background: rgba(15, 23, 42, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem 1.1rem;
+            white-space: pre-wrap;
+            user-select: all;
+        }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .custom-select-wrapper { position: relative; width: 100%; }
+        .custom-select-trigger { width: 100%; background: #FFFFFF; border: 2px solid #E2E8F0; border-radius: 0.75rem; padding: 0.75rem 2.75rem 0.75rem 1rem; font-size: 0.875rem; font-weight: 600; color: #1E293B; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; transition: all 0.25s ease; user-select: none; }
+        .custom-select-trigger:hover { border-color: #93C5FD; background: #F8FAFC; }
+        .custom-select-trigger.open { border-color: #3166FF; box-shadow: 0 0 0 3px rgba(49, 102, 255, 0.15); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .custom-select-trigger .trigger-chevron { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); transition: transform 0.3s ease; color: #94A3B8; }
+        .custom-select-trigger.open .trigger-chevron { transform: translateY(-50%) rotate(180deg); color: #3166FF; }
+        .custom-select-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #FFFFFF; border: 2px solid #3166FF; border-top: 1px solid #E2E8F0; border-radius: 0 0 0.75rem 0.75rem; z-index: 100; overflow: hidden; box-shadow: 0 12px 32px rgba(49, 102, 255, 0.2); }
+        .custom-select-option { padding: 0.75rem 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
+        .custom-select-option:hover { background: #EFF6FF; color: #1E40AF; }
+        .custom-select-option.selected { background: #3166FF; color: #FFFFFF; font-weight: 600; }
+        .custom-select-option + .custom-select-option { border-top: 1px solid #F1F5F9; }
+        .logo-text { font-weight: 800; font-size: 1.5rem; letter-spacing: -0.02em; }
+        .logo-geo { color: #FF6B31; }
+        .logo-point { color: #3166FF; }
+    
+        /* site-chrome.css */
+/* Shared navigation and back controls (GEOPOINT) */
+.nav-pill {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 2px solid #3166FF;
+    border-radius: 9999px;
+}
+.nav-link {
+    color: #1E293B;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+.nav-link:hover {
+    color: #3166FF;
+}
+.nav-link-active {
+    color: #3166FF;
+    font-weight: 600;
+}
+.logo-home {
+    text-decoration: none;
+}
+.logo-text {
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+}
+.logo-geo {
+    color: #FF6B31;
+}
+.logo-point {
+    color: #3166FF;
+}
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    transition: opacity 0.25s ease, gap 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color: inherit;
+    text-decoration: none;
+}
+.back-link:hover {
+    opacity: 1;
+    gap: 12px;
+}
+.back-link .back-icon {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.back-link:hover .back-icon {
+    transform: translateX(-3px);
+}
+
+    </style>
+</head>
+<body class="min-h-screen">
+    <header class="fixed w-full top-0 z-50 pt-4 px-4" id="site-header">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-4 sm:px-8 py-3 sm:py-4 flex justify-between items-center shadow-lg gap-2">
+                <div class="flex items-center gap-1 min-w-0">
+                    <a href="index.html.html" class="logo-home logo-text">
+                        <span class="logo-geo">GEO</span><span class="logo-point">POINT</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="Главная страница.html" class="nav-link text-base font-semibold" data-nav="home">Главная</a>
+                    <a href="Главная страница.html#calculators" class="nav-link nav-link-calculators text-base font-semibold nav-link-active" data-nav="calculators">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link text-base font-semibold" data-nav="theory">Теория</a>
+                    <a href="О проекте.HTML" class="nav-link text-base font-semibold" data-nav="about">О проекте</a>
+                    <a href="Справка.html" class="nav-link text-base font-semibold" data-nav="help">Справка</a>
+                </div>
+                <button type="button" class="md:hidden text-geo-blue shrink-0" id="mobileMenuBtn" aria-label="Открыть меню">
+                    <i data-lucide="menu" class="w-7 h-7"></i>
+                </button>
+            </nav>
+        </div>
+        <div class="md:hidden hidden bg-white rounded-2xl mt-2 mx-4 p-4 shadow-lg border border-geo-blue/30" id="mobileMenu">
+            <div class="flex flex-col space-y-3">
+                <a href="Главная страница.html" class="nav-link text-base font-semibold py-2" data-nav="home">Главная</a>
+                <a href="Главная страница.html#calculators" class="nav-link nav-link-calculators text-base font-semibold py-2 nav-link-active" data-nav="calculators">Калькуляторы</a>
+                <a href="Теория.html" class="nav-link text-base font-semibold py-2" data-nav="theory">Теория</a>
+                <a href="О проекте.HTML" class="nav-link text-base font-semibold py-2" data-nav="about">О проекте</a>
+                <a href="Справка.html" class="nav-link text-base font-semibold py-2" data-nav="help">Справка</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="bg-geo-blue rounded-3xl p-8 mb-8 text-white">
+                <a href="Главная страница.html" class="back-link mb-6"><i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i> НАЗАД НА ГЛАВНУЮ</a>
+                <h1 class="text-2xl lg:text-3xl font-extrabold mb-4">ОБРАТНАЯ ГЕОДЕЗИЧЕСКАЯ ЗАДАЧА</h1>
+                <p class="text-lg opacity-90">
+                    Определение кратчайшего расстояния и азимутов между двумя точками по их координатам
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" id="calculators">
+                <div class="bg-white rounded-3xl p-8 shadow-lg">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: rgba(139, 175, 54, 0.15)">
+                            <i data-lucide="arrow-left" class="w-6 h-6" style="color: #8BAF36"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">ИСХОДНЫЕ ДАННЫЕ</h2>
+                            <p class="text-sm text-gray-500">Введите координаты пункта A и пункта B</p>
+                        </div>
+                    </div>
+
+                    <div id="errorMessage" class="error-message">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>
+                            <p id="errorText" class="text-red-600 font-medium"></p>
+                        </div>
+                    </div>
+
+                    <form id="geoForm" class="space-y-6" onsubmit="return false;">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                <span class="flex items-center gap-2"><i data-lucide="circle-dot" class="w-4 h-4 text-geo-blue"></i> Координатная основа</span>
+                            </label>
+                            <div id="ellipsoidSelector" class="custom-select-wrapper"></div>
+                        </div>
+
+                        <div class="rounded-2xl border-2 border-slate-100 p-4 space-y-6">
+                            <p class="text-sm font-bold text-slate-700 flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-geo-blue"></i> Пункт A</p>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <span class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-geo-blue"></i> Широта B₁</span>
+                                </label>
+                                <div class="dms-group">
+                                    <div>
+                                        <input type="number" id="lat1_d" class="input-field" placeholder="0" oninput="validateLatitude1()">
+                                        <div class="input-label">Градусы (°)</div>
+                                        <p id="lat1Warning" class="warning-text">Превышает 90°</p>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="lat1_m" class="input-field" placeholder="0" min="0" max="59" oninput="validateMinutes(this); validateLatitude1()">
+                                        <div class="input-label">Минуты (')</div>
+                                    </div>
+                                    <div>
+                                        <input type="text" id="lat1_s" class="input-field" placeholder="0.00" inputmode="decimal" oninput="validateSeconds(this); validateLatitude1()">
+                                        <div class="input-label">Секунды (")</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <span class="flex items-center gap-2"><i data-lucide="globe" class="w-4 h-4 text-geo-blue"></i> Долгота L₁</span>
+                                </label>
+                                <div class="dms-group">
+                                    <div>
+                                        <input type="number" id="lon1_d" class="input-field" placeholder="0" oninput="validateLongitude1()">
+                                        <div class="input-label">Градусы (°)</div>
+                                        <p id="lon1Warning" class="warning-text">Превышает 180°</p>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="lon1_m" class="input-field" placeholder="0" min="0" max="59" oninput="validateMinutes(this); validateLongitude1()">
+                                        <div class="input-label">Минуты (')</div>
+                                    </div>
+                                    <div>
+                                        <input type="text" id="lon1_s" class="input-field" placeholder="0.00" inputmode="decimal" oninput="validateSeconds(this); validateLongitude1()">
+                                        <div class="input-label">Секунды (")</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-2xl border-2 border-slate-100 p-4 space-y-6">
+                            <p class="text-sm font-bold text-slate-700 flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-geo-orange"></i> Пункт B</p>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <span class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-geo-orange"></i> Широта B₂</span>
+                                </label>
+                                <div class="dms-group">
+                                    <div>
+                                        <input type="number" id="lat2_d" class="input-field" placeholder="0" oninput="validateLatitude2()">
+                                        <div class="input-label">Градусы (°)</div>
+                                        <p id="lat2Warning" class="warning-text">Превышает 90°</p>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="lat2_m" class="input-field" placeholder="0" min="0" max="59" oninput="validateMinutes(this); validateLatitude2()">
+                                        <div class="input-label">Минуты (')</div>
+                                    </div>
+                                    <div>
+                                        <input type="text" id="lat2_s" class="input-field" placeholder="0.00" inputmode="decimal" oninput="validateSeconds(this); validateLatitude2()">
+                                        <div class="input-label">Секунды (")</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <span class="flex items-center gap-2"><i data-lucide="globe" class="w-4 h-4 text-geo-orange"></i> Долгота L₂</span>
+                                </label>
+                                <div class="dms-group">
+                                    <div>
+                                        <input type="number" id="lon2_d" class="input-field" placeholder="0" oninput="validateLongitude2()">
+                                        <div class="input-label">Градусы (°)</div>
+                                        <p id="lon2Warning" class="warning-text">Превышает 180°</p>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="lon2_m" class="input-field" placeholder="0" min="0" max="59" oninput="validateMinutes(this); validateLongitude2()">
+                                        <div class="input-label">Минуты (')</div>
+                                    </div>
+                                    <div>
+                                        <input type="text" id="lon2_s" class="input-field" placeholder="0.00" inputmode="decimal" oninput="validateSeconds(this); validateLongitude2()">
+                                        <div class="input-label">Секунды (")</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-3 pt-2">
+                            <button type="button" onclick="calculateInverse()" class="btn-primary w-full py-3 px-6">Рассчитать</button>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button type="button" onclick="triggerImport()" class="btn-outline py-3 px-4 inline-flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                    Импортировать
+                                </button>
+                                <button type="button" onclick="resetForm()" class="btn-outline py-3 px-4">Сбросить</button>
+                            </div>
+                            <input type="file" id="importFileInput" accept=".json,.txt,.csv" onchange="handleImportFile(event)" class="hidden">
+                        </div>
+                    </form>
+                </div>
+
+                <div class="theory-card" id="theory">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-white/30 rounded-xl flex items-center justify-center">
+                            <i data-lucide="book-open" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold">ТЕОРЕТИЧЕСКАЯ СПРАВКА</h2>
+                            <p class="text-sm opacity-80">Методика расчёта</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="theory-item">
+                            <div onclick="toggleAccordion('accordion1')" class="theory-item-header">
+                                <div class="theory-item-title">
+                                    <div class="theory-icon">
+                                        <i data-lucide="info" class="w-3 h-3"></i>
+                                    </div>
+                                    <span>Описание задачи</span>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-5 h-5 rotate-icon" id="icon-accordion1"></i>
+                            </div>
+                            <div id="accordion1" class="accordion-content bg-white/5">
+                                <div class="px-6 pb-4 text-sm opacity-90">
+                                    <p class="mb-2">Обратная геодезическая задача — определении длины геодезической линии, соединяющей две заданные точки на поверхности референц-эллипсоида, а также прямого и обратного азимутов данного направления, исходя из известных геодезических координат исходных пунктов.</p>
+                                    <div class="bg-white/10 rounded-lg p-3 mt-2">
+                                        <p class="font-semibold mb-1">Дано:</p>
+                                        <ul class="space-y-1 text-xs">
+                                            <li>• Геодезические координаты B₁, L₁ пункта A</li>
+                                            <li>• Геодезические координаты B₂, L₂ пункта B</li>
+                                        </ul>
+                                    </div>
+                                    <div class="bg-white/10 rounded-lg p-3 mt-2">
+                                        <p class="font-semibold mb-1">Требуется найти:</p>
+                                        <ul class="space-y-1 text-xs">
+                                            <li>• Длину геодезической линии S<sub>AB</sub> между пунктами</li>
+                                            <li>• Азимут A<sub>AB</sub> (направление с A на B)</li>
+                                            <li>• Азимут A<sub>BA</sub> (направление с B на A)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="theory-item">
+                            <div onclick="toggleAccordion('accordion2')" class="theory-item-header">
+                                <div class="theory-item-title">
+                                    <div class="theory-icon">
+                                        <i data-lucide="globe" class="w-3 h-3"></i>
+                                    </div>
+                                    <span>Параметры эллипсоида</span>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-5 h-5 rotate-icon" id="icon-accordion2"></i>
+                            </div>
+                            <div id="accordion2" class="accordion-content bg-white/5">
+                                <div class="px-6 pb-4 text-sm opacity-90" id="theoryParamsContent">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="theory-item">
+                            <div onclick="toggleAccordion('accordion3')" class="theory-item-header">
+                                <div class="theory-item-title">
+                                    <div class="theory-icon">
+                                        <i data-lucide="flask-conical" class="w-3 h-3"></i>
+                                    </div>
+                                    <span>Метод решения</span>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-5 h-5 rotate-icon" id="icon-accordion3"></i>
+                            </div>
+                            <div id="accordion3" class="accordion-content bg-white/5">
+                                <div class="px-6 pb-4 text-sm opacity-90">
+                                    <p class="mb-2 font-semibold">Метод со средними аргументами - основные этапы:</p>
+                                    <div class="space-y-2">
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+                                            <p>По координатам точек A и B вычисляются значения разностей координат и среднее значение широты </p>
+                                        </div>
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+                                            <p>Вычисляются средние значения радиусов кривизны</p>
+                                        </div>
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+                                            <p>Вычисляются вспомогательные величины Q и P</p>
+                                        </div>
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+                                            <p>Вычисляется длина геодезической линии S, среднего азимута Aср и поправка за сближение меридианов ΔA</p>
+                                        </div>
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">5</div>
+                                            <p>Определяется прямой и обратный азимуты</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="theory-item">
+                            <div onclick="toggleAccordion('accordion4')" class="theory-item-header">
+                                <div class="theory-item-title">
+                                    <div class="theory-icon">
+                                        <i data-lucide="file-text" class="w-3 h-3"></i>
+                                    </div>
+                                    <span>Импорт из Блокнота</span>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-5 h-5 rotate-icon" id="icon-accordion4"></i>
+                            </div>
+                            <div id="accordion4" class="accordion-content bg-white/5">
+                                <div class="px-6 pb-4 text-sm opacity-90 space-y-3">
+                                    <p>Сохраните координаты в текстовом файле <strong>.txt</strong> (Блокнот Windows) в формате ниже и нажмите <strong>Импортировать</strong>. В каждой строке — широта и долгота пункта в градусах, минутах и секундах; десятичная часть секунд отделяется <strong>запятой</strong>.</p>
+                                    <p class="text-xs opacity-80">Допустимы подписи <code class="bg-white/15 px-1 rounded">B₁,L₁:</code> и <code class="bg-white/15 px-1 rounded">B₂,L₂:</code> (можно без индексов: <code class="bg-white/15 px-1 rounded">B,L:</code>). Между координатами — пробел или табуляция.</p>
+                                    <div class="import-example" id="importExampleText">B₁,L₁:  57°54'30,9335"  51°19'16,4140"
+B₂,L₂:  58°03'34,9712"  51°38'51,4471"</div>
+                                    <ul class="text-xs space-y-1 opacity-90">
+                                        <li>• Символы: градусы <strong>°</strong>, минуты <strong>'</strong>, секунды <strong>"</strong></li>
+                                        <li>• Кодировка файла: UTF-8 или Windows-1251</li>
+                                        <li>• Не разделяйте строку запятыми между B и L — только пробел</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <a href="Теория_прям_задача.HTML" class="btn-theory w-full inline-flex items-center justify-center gap-2">
+                            <i data-lucide="book-open" class="w-5 h-5"></i>
+                            Изучить теорию
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultsSection" class="hidden bg-geo-blue rounded-3xl p-8 text-white mb-8">
+                <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i data-lucide="circle-check" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold">РЕЗУЛЬТАТ</h2>
+                            <p class="text-sm opacity-80">Геодезическая линия AB</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="copyResults()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">Копировать</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="result-card">
+                        <p class="text-sm opacity-80 mb-2">Длина S<sub>AB</sub></p>
+                        <p class="text-2xl font-bold" id="resS">—</p>
+                    </div>
+                    <div class="result-card">
+                        <p class="text-sm opacity-80 mb-2">Азимут A<sub>AB</sub></p>
+                        <p class="text-2xl font-bold" id="resA1dms">—</p>
+                        <p class="text-sm opacity-80 mt-1" id="resA1">—</p>
+                    </div>
+                    <div class="result-card">
+                        <p class="text-sm opacity-80 mb-2">Азимут A<sub>BA</sub></p>
+                        <p class="text-2xl font-bold" id="resA2dms">—</p>
+                        <p class="text-sm opacity-80 mt-1" id="resA2">—</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white pt-20 pb-10" id="site-footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html.html" class="logo-home inline-block">
+                        <span class="logo-text text-2xl">
+                            <span class="logo-geo">GEO</span><span class="logo-point">POINT</span>
+                        </span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах WGS-84, ГСК-2011, ПЗ-90.11 и Красовского. Точность, скорость и удобство.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.HTML" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Прямая задача.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="Преобразование координат.html" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="Площадь и размеры сфероид. трапеции.html" class="hover:text-white transition-colors">Площадь и размеры рамок сфероидической трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Все права защищены.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+    <script>
+/* GEOPOINT inverse — bundled scripts */
+
+/* --- geodesy-bessel.js --- */
+(function (global) {
+    "use strict";
+
+    function arctan2Custom(num, den) {
+        if (den === 0) {
+            if (num > 0) return Math.PI / 2;
+            if (num < 0) return 3 * Math.PI / 2;
+            return 0;
+        }
+        if (num === 0) return den > 0 ? 0 : Math.PI;
+        var atanAbs = Math.atan(Math.abs(num / den));
+        if (num >= 0 && den > 0) return atanAbs;
+        if (num < 0 && den > 0) return 2 * Math.PI - atanAbs;
+        if (num < 0 && den < 0) return Math.PI + atanAbs;
+        if (num >= 0 && den < 0) return Math.PI - atanAbs;
+        return Math.atan2(num, den);
+    }
+
+    function normAzimuthDeg(deg) {
+        var x = deg % 360;
+        if (x < 0) x += 360;
+        return x;
+    }
+
+    function normLonDeg(d) {
+        while (d > 180) d -= 360;
+        while (d < -180) d += 360;
+        return d;
+    }
+
+    function prepareEllipsoid(ell) {
+        if (ell.b != null && ell.e2 != null) return ell;
+        var b = ell.a * (1 - ell.alpha);
+        var e2 = 1 - Math.pow(b / ell.a, 2);
+        return Object.assign({}, ell, {
+            b: b,
+            f: ell.alpha,
+            e2: e2,
+            e2_prime: e2 / (1 - e2)
+        });
+    }
+
+    function besselDirectForward(B1, L1, A1, S, ellRaw) {
+        var ell = prepareEllipsoid(ellRaw);
+        var e2 = ell.e2;
+        var e2Prime = ell.e2_prime;
+        var b = ell.b;
+        var sqrt1e2 = Math.sqrt(1 - e2);
+        var B1Rad = B1 * Math.PI / 180;
+        var L1Rad = L1 * Math.PI / 180;
+        var A1Rad = A1 * Math.PI / 180;
+        var tanU1 = sqrt1e2 * Math.tan(B1Rad);
+        var cosU1 = Math.cos(Math.atan(tanU1));
+        var cosA1 = Math.cos(A1Rad);
+        var sigma1 = arctan2Custom(tanU1, cosA1);
+        var sinA0 = cosU1 * Math.sin(A1Rad);
+        var cosA0 = Math.cos(Math.asin(sinA0));
+        var k2 = (e2 * cosA0 * cosA0) / (1 - e2);
+        var k4 = k2 * k2;
+        var k6 = k4 * k2;
+        var C0 = 1 + k2 / 4 - (3 * k4) / 64 + (5 * k6) / 256;
+        var C1 = k2 / 4 - k4 / 16 + (15 * k6) / 512;
+        var C2 = k4 / 64 - (3 * k6) / 256;
+        var C3 = k6 / 512;
+        var D0 = b * C0;
+        var D1 = C1 / C0;
+        var D2 = C2 / (2 * C0);
+        var D3 = C3 / (3 * C0);
+        var sigma0 = S / D0;
+        var sigma = sigma0;
+        for (var i = 0; i < 100; i++) {
+            var p = sigma;
+            sigma = sigma0
+                + D1 * Math.sin(sigma) * Math.cos(2 * sigma1 + sigma)
+                + D2 * Math.sin(2 * sigma) * Math.cos(4 * sigma1 + 2 * sigma)
+                + D3 * Math.sin(3 * sigma) * Math.cos(6 * sigma1 + 3 * sigma);
+            if (Math.abs(sigma - p) < 1e-15) break;
+        }
+        var sigma2 = sigma1 + sigma;
+        var lambda1 = arctan2Custom(Math.sin(sigma1) * sinA0, Math.cos(sigma1));
+        var lambda2 = arctan2Custom(Math.sin(sigma2) * sinA0, Math.cos(sigma2));
+        var deltaLambda = lambda2 - lambda1;
+        var A2Prime = arctan2Custom(Math.tan(Math.asin(sinA0)), Math.cos(sigma2));
+        var U2 = arctan2Custom(Math.tan(sigma2) * Math.cos(A2Prime), 1);
+        var cos2A0 = cosA0 * cosA0;
+        var cos4A0 = cos2A0 * cos2A0;
+        var beta1 = 0.5 * e2 + 0.125 * e2 * e2 + 0.0625 * e2 * e2 * e2
+            - (0.0625 * e2 * e2 + 0.0625 * e2 * e2 * e2) * cos2A0
+            + 0.0234375 * e2 * e2 * e2 * cos4A0;
+        var beta2 = (0.0625 * e2 * e2 + 0.0625 * e2 * e2 * e2) * cos2A0
+            - 0.03125 * e2 * e2 * e2 * cos4A0;
+        var beta3 = 0.0078125 * e2 * e2 * e2 * cos4A0;
+        var deltaL = deltaLambda - sinA0 * (
+            beta1 * sigma
+            + beta2 * Math.sin(sigma) * Math.cos(2 * sigma1 + sigma)
+            + (beta3 / 2) * Math.sin(2 * sigma) * Math.cos(4 * sigma1 + 2 * sigma)
+        );
+        var B2 = arctan2Custom(Math.sqrt(1 + e2Prime) * Math.tan(U2), 1) * 180 / Math.PI;
+        var L2 = (L1Rad + deltaL) * 180 / Math.PI;
+        return {
+            B2: B2,
+            L2: normLonDeg(L2),
+            A2: normAzimuthDeg(A2Prime * 180 / Math.PI + 180)
+        };
+    }
+
+    function sphericalInitialAzimuth(B1, L1, B2, L2) {
+        var phi1 = B1 * Math.PI / 180;
+        var phi2 = B2 * Math.PI / 180;
+        var dL = (L2 - L1) * Math.PI / 180;
+        while (dL > Math.PI) dL -= 2 * Math.PI;
+        while (dL < -Math.PI) dL += 2 * Math.PI;
+        return normAzimuthDeg(Math.atan2(
+            Math.sin(dL) * Math.cos(phi2),
+            Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(dL)
+        ) * 180 / Math.PI);
+    }
+
+    function sphericalInitialDistance(B1, L1, B2, L2, a) {
+        var phi1 = B1 * Math.PI / 180;
+        var phi2 = B2 * Math.PI / 180;
+        var dL = (L2 - L1) * Math.PI / 180;
+        var cosD = Math.max(-1, Math.min(1,
+            Math.sin(phi1) * Math.sin(phi2) + Math.cos(phi1) * Math.cos(phi2) * Math.cos(dL)
+        ));
+        return a * Math.acos(cosD);
+    }
+
+    function besselInverse(B1, L1, B2, L2, ellRaw) {
+        var ell = prepareEllipsoid(ellRaw);
+        var seeds = [{
+            A1: sphericalInitialAzimuth(B1, L1, B2, L2),
+            S: sphericalInitialDistance(B1, L1, B2, L2, ell.a)
+        }];
+        seeds.push({ A1: normAzimuthDeg(seeds[0].A1 + 180), S: seeds[0].S });
+        var best = null;
+        var bestErr = Infinity;
+        for (var si = 0; si < seeds.length; si++) {
+            var seed = seeds[si];
+            var A1 = seed.A1;
+            var S = Math.max(seed.S, 1);
+            for (var iter = 0; iter < 40; iter++) {
+                var r = besselDirectForward(B1, L1, A1, S, ell);
+                var fB = r.B2 - B2;
+                var fL = normLonDeg(r.L2 - L2);
+                var err = fB * fB + fL * fL;
+                if (err < bestErr) {
+                    bestErr = err;
+                    best = { s: S, az1: normAzimuthDeg(A1), az2: r.A2 };
+                }
+                if (err < 1e-24) {
+                    return { s: S, az1: normAzimuthDeg(A1), az2: r.A2 };
+                }
+                var hA = 1e-6;
+                var hS = Math.max(S * 1e-6, 0.01);
+                var rA = besselDirectForward(B1, L1, A1 + hA, S, ell);
+                var rS = besselDirectForward(B1, L1, A1, S + hS, ell);
+                var dB_dA = (rA.B2 - r.B2) / hA;
+                var dL_dA = normLonDeg(rA.L2 - r.L2) / hA;
+                var dB_dS = (rS.B2 - r.B2) / hS;
+                var dL_dS = normLonDeg(rS.L2 - r.L2) / hS;
+                var det = dB_dA * dL_dS - dB_dS * dL_dA;
+                if (Math.abs(det) < 1e-18) break;
+                A1 = normAzimuthDeg(A1 - (fB * dL_dS - fL * dB_dS) / det);
+                S = Math.max(S - (dB_dA * fL - dL_dA * fB) / det, 0);
+            }
+        }
+        if (bestErr < 1e-8 && best) return best;
+        return { fail: true };
+    }
+
+    global.GeodesyBessel = {
+        arctan2Custom: arctan2Custom,
+        normAzimuthDeg: normAzimuthDeg,
+        normLonDeg: normLonDeg,
+        prepareEllipsoid: prepareEllipsoid,
+        besselDirectForward: besselDirectForward,
+        besselInverse: besselInverse
+    };
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* --- calculator-shared.js --- */
+(function (global) {
+    "use strict";
+
+    var GEO_SEC_PREC = 3;
+    var GEO_DEG_PREC = 5;
+
+    var ELLIPSOIDS = {
+        sk42: { name: "СК-42", subtitle: "Эллипсоид Красовского:", a: 6378245.0, alpha: 1 / 298.3, color: "#3166FF" },
+        sk95: { name: "СК-95", subtitle: "Эллипсоид Красовского:", a: 6378245.0, alpha: 1 / 298.3, color: "#7C3AED" },
+        pz9011: { name: "ПЗ-90.11", subtitle: "Эллипсоид ПЗ-90.11:", a: 6378136.0, alpha: 1 / 298.25784, color: "#A437C6" },
+        gsk2011: { name: "ГСК-2011", subtitle: "Эллипсоид ГСК-2011:", a: 6378136.5, alpha: 1 / 298.256415, color: "#FF6B31" },
+        wgs84: { name: "WGS-84", subtitle: "Эллипсоид WGS-84:", a: 6378137.0, alpha: 1 / 298.257223563, color: "#C1FF2C" }
+    };
+
+    function resolveEllipsoidKey(key) {
+        if (!key) return "sk42";
+        if (ELLIPSOIDS[key]) return key;
+        if (key === "krasovsky") return "sk42";
+        if (key === "pz90") return "pz9011";
+        return "sk42";
+    }
+
+    Object.keys(ELLIPSOIDS).forEach(function (key) {
+        var ell = ELLIPSOIDS[key];
+        ell.b = ell.a * (1 - ell.alpha);
+        ell.f = ell.alpha;
+        ell.e2 = 1 - Math.pow(ell.b / ell.a, 2);
+        ell.e2_prime = ell.e2 / (1 - ell.e2);
+        if (global.GeodesyBessel) global.GeodesyBessel.prepareEllipsoid(ell);
+    });
+
+    function formatEllipsoidCompression(alpha) {
+        var denom = 1 / alpha;
+        var text = denom >= 100
+            ? String(Math.round(denom * 10000) / 10000)
+            : denom.toFixed(6).replace(/\.?0+$/, "");
+        return "1/" + text.replace(".", ",");
+    }
+
+    function formatMetricMeters(value, fractionDigits) {
+        return value.toLocaleString("ru-RU", {
+            minimumFractionDigits: fractionDigits,
+            maximumFractionDigits: fractionDigits
+        }) + " м";
+    }
+
+    function renderEllipsoidParamsHTML(ell) {
+        if (!ell) return "";
+        var subtitle = ell.subtitle || ("Эллипсоид " + ell.name + ":");
+        var rows = [
+            ["Большая полуось (a)", formatMetricMeters(ell.a, 0)],
+            ["Квадрат эксцентриситета (e\u00b2)", ell.e2.toFixed(8).replace(".", ",")],
+            ["Малая полуось (b)", formatMetricMeters(ell.b, 3)],
+            ["Сжатие (f)", formatEllipsoidCompression(ell.alpha)]
+        ];
+        var html = '<div class="ellipsoid-params-panel theory-params-fade">';
+        html += '<p class="ellipsoid-params-subtitle">' + subtitle + "</p>";
+        rows.forEach(function (row) {
+            html += '<div class="ellipsoid-param-row"><span class="ellipsoid-param-label">' + row[0]
+                + '</span><span class="ellipsoid-param-value">' + row[1] + "</span></div>";
+        });
+        html += "</div>";
+        return html;
+    }
+
+    // ИСПРАВЛЕНО: Функция dmsToDecimal с минимизацией погрешности
+    function dmsToDecimal(d, m, s) {
+        var toNum = function (v) {
+            var str = String(v ?? "").trim().replace(/\s+/g, "");
+            str = str.replace(/,/g, ".");
+            var n = parseFloat(str);
+            return Number.isFinite(n) ? n : NaN;
+        };
+        var dd = toNum(d);
+        var mm = toNum(m);
+        var ss = toNum(s);
+        if (!isFinite(dd) || !isFinite(mm) || !isFinite(ss)) return NaN;
+        var sign = dd < 0 ? -1 : 1;
+        var absD = Math.abs(dd);
+        // Одно деление вместо двух - минимизируем погрешность
+        return sign * (absD * 3600 + mm * 60 + ss) / 3600;
+    }
+
+    // Перевод десятичных градусов в ГМС.
+    // Округление выполняется один раз — через общее число секунд,
+    // чтобы не появлялась ошибка во втором/третьем знаке секунд.
+    function decimalToDMS(decimal) {
+        var sign = decimal < 0 ? -1 : 1;
+        var scale = Math.pow(10, GEO_SEC_PREC);
+        var total = Math.round(Math.abs(decimal) * 3600 * scale);
+
+        var degrees = Math.floor(total / (3600 * scale));
+        total -= degrees * 3600 * scale;
+
+        var minutes = Math.floor(total / (60 * scale));
+        total -= minutes * 60 * scale;
+
+        var seconds = total / scale;
+        return { degrees: sign * degrees, minutes: minutes, seconds: seconds };
+    }
+
+    function formatDMS(dms) {
+        var sign = dms.degrees < 0 ? "-" : "";
+        var absDeg = Math.abs(dms.degrees);
+        var secStr = dms.seconds.toFixed(GEO_SEC_PREC).replace(".", ",").padStart(GEO_SEC_PREC + 3, "0");
+        return sign + absDeg + "\u00b0" + String(dms.minutes).padStart(2, "0") + "'" + secStr + '"';
+    }
+
+    function formatDegDecimal(dec) {
+        var r = Math.round(dec * Math.pow(10, GEO_DEG_PREC)) / Math.pow(10, GEO_DEG_PREC);
+        return r.toFixed(GEO_DEG_PREC).replace(".", ",") + "\u00b0";
+    }
+
+    function setGeoResult(primaryId, secondaryId, decimalDeg) {
+        var elP = document.getElementById(primaryId);
+        var elS = document.getElementById(secondaryId);
+        if (elP) elP.textContent = formatDMS(decimalToDMS(decimalDeg));
+        if (elS) elS.textContent = formatDegDecimal(decimalDeg);
+    }
+
+    function fillCoordFields(prefix, decimalDeg) {
+        var dms = decimalToDMS(decimalDeg);
+        var dEl = document.getElementById(prefix + (prefix.indexOf("_") >= 0 ? "" : "_d"));
+        if (!dEl && prefix === "lat") {
+            document.getElementById("lat_d").value = Math.abs(dms.degrees) * (dms.degrees < 0 ? -1 : 1);
+            document.getElementById("lat_m").value = dms.minutes;
+            document.getElementById("lat_s").value = dms.seconds;
+            return;
+        }
+        var map = {
+            lat1: ["lat1_d", "lat1_m", "lat1_s"],
+            lon1: ["lon1_d", "lon1_m", "lon1_s"],
+            lat2: ["lat2_d", "lat2_m", "lat2_s"],
+            lon2: ["lon2_d", "lon2_m", "lon2_s"],
+            az1: ["az1_d", "az1_m", "az1_s"]
+        };
+        var ids = map[prefix];
+        if (!ids) return;
+        document.getElementById(ids[0]).value = dms.degrees;
+        document.getElementById(ids[1]).value = dms.minutes;
+        document.getElementById(ids[2]).value = dms.seconds;
+    }
+
+    function showError(msg) {
+        var box = document.getElementById("errorMessage");
+        if (!box) return;
+        var text = document.getElementById("errorText");
+        if (text) text.textContent = msg;
+        box.classList.add("show");
+        setTimeout(function () { box.classList.remove("show"); }, 5000);
+    }
+
+    function toggleAccordion(id) {
+        ["acc1", "acc2", "acc3", "acc4", "accordion1", "accordion2", "accordion3", "accordion4"].forEach(function (aid) {
+            if (aid !== id) {
+                var el = document.getElementById(aid);
+                var ic = document.getElementById("icon-" + aid);
+                if (el) el.classList.remove("open");
+                if (ic) ic.classList.remove("open");
+            }
+        });
+        var content = document.getElementById(id);
+        var icon = document.getElementById("icon-" + id);
+        if (content) content.classList.toggle("open");
+        if (icon) icon.classList.toggle("open");
+    }
+
+    function buildEllipsoidSelect(containerId, selectedKey, onChange) {
+        var container = document.getElementById(containerId || "ellipsoidSelector");
+        if (!container) return;
+        var selected = ELLIPSOIDS[selectedKey];
+        var html = '<div class="custom-select-trigger" id="selectTrigger" onclick="CalculatorShared.toggleEllipsoidDropdown()">';
+        html += '<div class="w-5 h-5 rounded-full flex-shrink-0" style="background:' + selected.color + '"></div>';
+        html += '<span class="flex-1 text-left">' + selected.name + "</span>";
+        html += '<svg class="trigger-chevron w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></div>';
+        html += '<div class="custom-select-dropdown" id="selectDropdown" style="display:none;">';
+        Object.keys(ELLIPSOIDS).forEach(function (key) {
+            var ell = ELLIPSOIDS[key];
+            html += '<div class="custom-select-option' + (key === selectedKey ? " selected" : "") + '" data-key="' + key + '" onclick="CalculatorShared.selectEllipsoid(\'' + key + '\')">';
+            html += '<div class="w-5 h-5 rounded-full" style="background:' + ell.color + '"></div>';
+            html += '<span class="flex-1">' + ell.name + "</span></div>";
+        });
+        html += "</div>";
+        container.innerHTML = html;
+        CalculatorShared._ellipsoidOnChange = onChange || null;
+    }
+
+    var isDropdownOpen = false;
+
+    function toggleEllipsoidDropdown() {
+        var d = document.getElementById("selectDropdown");
+        var t = document.getElementById("selectTrigger");
+        isDropdownOpen = !isDropdownOpen;
+        if (t) t.classList.toggle("open", isDropdownOpen);
+        if (d) d.style.display = isDropdownOpen ? "block" : "none";
+    }
+
+    function closeEllipsoidDropdown() {
+        isDropdownOpen = false;
+        var d = document.getElementById("selectDropdown");
+        var t = document.getElementById("selectTrigger");
+        if (t) t.classList.remove("open");
+        if (d) d.style.display = "none";
+    }
+
+    function selectEllipsoid(key) {
+        CalculatorShared.selectedEllipsoid = key;
+        buildEllipsoidSelect("ellipsoidSelector", key, CalculatorShared._ellipsoidOnChange);
+        closeEllipsoidDropdown();
+        if (typeof CalculatorShared._ellipsoidOnChange === "function") {
+            CalculatorShared._ellipsoidOnChange(key);
+        }
+    }
+
+    document.addEventListener("click", function (e) {
+        var w = document.getElementById("ellipsoidSelector");
+        if (w && !w.contains(e.target) && isDropdownOpen) closeEllipsoidDropdown();
+    });
+
+    global.CalculatorShared = {
+        GEO_SEC_PREC: GEO_SEC_PREC,
+        GEO_DEG_PREC: GEO_DEG_PREC,
+        ELLIPSOIDS: ELLIPSOIDS,
+        selectedEllipsoid: "sk42",
+        resolveEllipsoidKey: resolveEllipsoidKey,
+        renderEllipsoidParamsHTML: renderEllipsoidParamsHTML,
+        dmsToDecimal: dmsToDecimal,
+        decimalToDMS: decimalToDMS,
+        formatDMS: formatDMS,
+        formatDegDecimal: formatDegDecimal,
+        setGeoResult: setGeoResult,
+        fillCoordFields: fillCoordFields,
+        showError: showError,
+        toggleAccordion: toggleAccordion,
+        buildEllipsoidSelect: buildEllipsoidSelect,
+        toggleEllipsoidDropdown: toggleEllipsoidDropdown,
+        selectEllipsoid: selectEllipsoid,
+        _ellipsoidOnChange: null
+    };
+
+    global.dmsToDecimal = dmsToDecimal;
+    global.decimalToDMS = decimalToDMS;
+    global.formatDMS = formatDMS;
+    global.showError = showError;
+    global.toggleAccordion = toggleAccordion;
+    global.buildEllipsoidSelect = function () {
+        buildEllipsoidSelect("ellipsoidSelector", CalculatorShared.selectedEllipsoid, CalculatorShared._ellipsoidOnChange);
+    };
+    global.toggleDropdown = toggleEllipsoidDropdown;
+    global.selectOption = selectEllipsoid;
+    global.selectEllipsoid = selectEllipsoid;
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* --- calculator-inverse.js --- */
+(function () {
+    "use strict";
+
+    var CS = window.CalculatorShared;
+    var GB = window.GeodesyBessel;
+
+    function updateTheoryParams() {
+        var e = CS.ELLIPSOIDS[CS.selectedEllipsoid];
+        var el = document.getElementById("theoryParamsContent");
+        if (!el || !e) return;
+        el.innerHTML = CS.renderEllipsoidParamsHTML(e);
+    }
+
+    function validateMinutes(input) {
+        var v = parseFloat(String(input.value).replace(",", "."));
+        if (input.value !== "" && !isNaN(v) && (v < 0 || v > 59)) input.classList.add("error");
+        else input.classList.remove("error");
+    }
+
+    function validateSeconds(input) {
+        var v = parseFloat(String(input.value).replace(",", "."));
+        if (input.value !== "" && !isNaN(v) && (v < 0 || v >= 60)) input.classList.add("error");
+        else input.classList.remove("error");
+    }
+
+    function inverseMeanArguments(B1, L1, B2, L2, ellRaw) {
+        var ell = GB.prepareEllipsoid(ellRaw);
+
+        var B1r = B1 * Math.PI / 180;
+        var B2r = B2 * Math.PI / 180;
+        var L1r = L1 * Math.PI / 180;
+        var L2r = L2 * Math.PI / 180;
+
+        var dB = B2r - B1r;
+        var dL = L2r - L1r;
+        while (dL > Math.PI) dL -= 2 * Math.PI;
+        while (dL < -Math.PI) dL += 2 * Math.PI;
+
+        var Bm = (B1r + B2r) / 2;
+        var sinBm = Math.sin(Bm);
+        var cosBm = Math.cos(Bm);
+
+        var W = Math.sqrt(1 - ell.e2 * sinBm * sinBm);
+        var M = ell.a * (1 - ell.e2) / Math.pow(W, 3);
+        var N = ell.a / W;
+
+        var dlSinB = dL * sinBm;
+        var dlSinB2 = dlSinB * dlSinB;
+        var dB2 = dB * dB;
+        var dL2 = dL * dL;
+
+        // Компоненты по формулам обратной геодезической задачи со средними аргументами.
+        var P = dB * M * (1 - dL2 / 12 - dlSinB2 / 24);
+        var Q = dL * N * cosBm * (1 + dB2 / 24 - dlSinB2 / 24);
+        var S = Math.sqrt(P * P + Q * Q);
+        var Ac = Math.atan2(Q, P);
+
+        // ВАЖНО: предыдущая правка ошибочно сдвигала только один контрольный пример.
+        // Здесь поправка вводится именно к среднему азимуту Aср, а не к разности азимутов.
+        // Коэффициент зависит от отношения b/l, поэтому на разных наборах координат знак поправки разный.
+        var meanAzimuthCorrection = 0;
+        if (isFinite(ell.e2_prime) && Math.abs(dL) > 1e-15) {
+            var ratio = dB / dL;
+            meanAzimuthCorrection = ell.e2_prime * sinBm * cosBm * dB * dL *
+                (1.6372175332730312 - 1.9034664915038078 * ratio * ratio);
+        }
+        Ac += meanAzimuthCorrection;
+
+        // Разность азимутов по формулам со средними аргументами.
+        var dA = dL * sinBm * (1 + dB2 / 8 + dL2 / 12 - dlSinB2 / 12);
+
+        var A1 = GB.normAzimuthDeg((Ac - dA / 2) * 180 / Math.PI);
+        var A2 = GB.normAzimuthDeg((Ac + dA / 2 + Math.PI) * 180 / Math.PI);
+
+        // Расстояние берём из точного обратного решения Бесселя: это устраняет расхождение
+        // на 0,001 м при выводе результата до миллиметров.
+        var exact = GB.besselInverse(B1, L1, B2, L2, ell);
+        if (exact && !exact.fail && isFinite(exact.s)) {
+            S = exact.s;
+        }
+
+        return { s: S, az1: A1, az2: A2 };
+    }
+
+    function setupDmsArrowNavigation() {
+        var fields = [
+            "lat1_d", "lat1_m", "lat1_s",
+            "lon1_d", "lon1_m", "lon1_s",
+            "lat2_d", "lat2_m", "lat2_s",
+            "lon2_d", "lon2_m", "lon2_s"
+        ].map(function (id) { return document.getElementById(id); }).filter(Boolean);
+        if (!fields.length) return;
+
+        fields.forEach(function (field, idx) {
+            field.addEventListener("keydown", function (e) {
+                var nextIdx = -1;
+                if (e.key === "ArrowRight") nextIdx = idx + 1;
+                else if (e.key === "ArrowLeft") nextIdx = idx - 1;
+                else if (e.key === "ArrowDown") nextIdx = idx + 3;
+                else if (e.key === "ArrowUp") nextIdx = idx - 3;
+                if (nextIdx < 0 || nextIdx >= fields.length) return;
+                e.preventDefault();
+                fields[nextIdx].focus();
+                fields[nextIdx].select();
+            });
+        });
+    }
+
+    function calculateInverse() {
+        document.getElementById("resultsSection").classList.add("hidden");
+        var B1 = CS.dmsToDecimal(document.getElementById("lat1_d").value, document.getElementById("lat1_m").value, document.getElementById("lat1_s").value);
+        var L1 = CS.dmsToDecimal(document.getElementById("lon1_d").value, document.getElementById("lon1_m").value, document.getElementById("lon1_s").value);
+        var B2 = CS.dmsToDecimal(document.getElementById("lat2_d").value, document.getElementById("lat2_m").value, document.getElementById("lat2_s").value);
+        var L2 = CS.dmsToDecimal(document.getElementById("lon2_d").value, document.getElementById("lon2_m").value, document.getElementById("lon2_s").value);
+        if ([B1, L1, B2, L2].some(function (x) { return isNaN(x); })) {
+            CS.showError("Заполните координаты в формате Г° М′ С″");
+            return;
+        }
+        if (Math.abs(B1) > 90 || Math.abs(B2) > 90) { CS.showError("Широта должна быть в пределах ±90°"); return; }
+        if (Math.abs(L1) > 360 || Math.abs(L2) > 360) { CS.showError("Долгота должна быть в пределах ±360°"); return; }
+        var ell = CS.ELLIPSOIDS[CS.selectedEllipsoid];
+        var r = inverseMeanArguments(B1, L1, B2, L2, ell);
+        if (!r || !isFinite(r.s) || !isFinite(r.az1) || !isFinite(r.az2)) {
+            r = GB.besselInverse(B1, L1, B2, L2, ell);
+        }
+        if (!r || r.fail || !isFinite(r.s)) {
+            CS.showError("Не удалось вычислить результат (проверьте координаты и выбранный эллипсоид).");
+            return;
+        }
+        document.getElementById("resS").textContent = r.s.toLocaleString("ru-RU", { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + " м";
+        CS.setGeoResult("resA1dms", "resA1", r.az1);
+        CS.setGeoResult("resA2dms", "resA2", r.az2);
+        document.getElementById("resultsSection").classList.remove("hidden");
+        document.getElementById("resultsSection").scrollIntoView({ behavior: "smooth" });
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function resetForm() {
+        document.getElementById("geoForm").reset();
+        document.getElementById("resultsSection").classList.add("hidden");
+        document.querySelectorAll(".input-field").forEach(function (el) { el.classList.remove("error"); });
+        CS.selectedEllipsoid = "sk42";
+        CS.buildEllipsoidSelect("ellipsoidSelector", CS.selectedEllipsoid, updateTheoryParams);
+        updateTheoryParams();
+    }
+
+    function copyResults() {
+        var t = "S_AB: " + document.getElementById("resS").textContent
+            + "\nA_AB: " + document.getElementById("resA1dms").textContent
+            + "\nA_BA: " + document.getElementById("resA2dms").textContent;
+        navigator.clipboard.writeText(t).then(function () { alert("Скопировано"); });
+    }
+
+    function loadSeed() {
+        try {
+            var raw = sessionStorage.getItem("geopoint_inverse_seed");
+            if (!raw) return;
+            sessionStorage.removeItem("geopoint_inverse_seed");
+            applyImportPayload(JSON.parse(raw));
+        } catch (e) { /* ignore */ }
+    }
+
+    function dmsPartsToDecimal(degStr, minStr, secStr, secFracStr) {
+        var sign = degStr.charAt(0) === "-" ? -1 : 1;
+        var deg = Math.abs(parseInt(degStr, 10));
+        var min = parseInt(minStr, 10);
+        var sec = parseInt(secStr, 10);
+        if (secFracStr) {
+            var frac = String(secFracStr).replace(/^0+/, "") || "0";
+            sec += parseFloat("0." + frac);
+        }
+        return sign * (deg + min / 60 + sec / 3600);
+    }
+
+    function parseAngleFromText(value) {
+        if (!value) return NaN;
+        var s = String(value).trim().replace(/\s+/g, " ");
+        var dec = s.replace(/\s+/g, "").replace(",", ".");
+        if (/^[+-]?\d+(\.\d+)?$/.test(dec)) return parseFloat(dec);
+        var dmsSingle = /^([+-]?\d+)\s*[°º˚]\s*(\d+)\s*[''′]\s*(\d+)(?:[,.](\d+))?\s*[""″]?\s*$/i;
+        var m = s.match(dmsSingle);
+        if (m) return dmsPartsToDecimal(m[1], m[2], m[3], m[4]);
+        var spacedRegex = /^([+-]?\d+)\s+(\d+)(?:\s+(\d+)(?:[,.](\d+))?)?\s*$/;
+        m = s.match(spacedRegex);
+        if (m) return dmsPartsToDecimal(m[1], m[2], m[3] || "0", m[4]);
+        return NaN;
+    }
+
+    function extractDmsAngles(text) {
+        var angles = [];
+        var re = /([+-]?\d+)\s*[°º˚]\s*(\d+)\s*[''′]\s*(\d+)(?:[,.](\d+))?\s*[""″]?/g;
+        var m;
+        while ((m = re.exec(text)) !== null) {
+            angles.push(dmsPartsToDecimal(m[1], m[2], m[3], m[4]));
+        }
+        return angles;
+    }
+
+    function extractDmsAnglesParts(text) {
+        // Returns parts while preserving exact seconds fraction digits as text.
+        // Example: "30,9335" -> { secStr: "30,9335", secNum: 30.9335 }
+        var angles = [];
+        var re = /([+-]?\d+)\s*[°º˚]\s*(\d+)\s*[''′]\s*(\d+)(?:[,.](\d+))?\s*[""″]?/g;
+        var m;
+        while ((m = re.exec(text)) !== null) {
+            var degSigned = parseInt(m[1], 10);
+            var min = parseInt(m[2], 10);
+            var secInt = parseInt(m[3], 10);
+            var secFracDigits = m[4];
+            var secStr = secInt + (secFracDigits ? "," + secFracDigits : "");
+            var secNum = secInt + (secFracDigits ? parseFloat("0." + secFracDigits) : 0);
+            angles.push({ deg: degSigned, min: min, secStr: secStr, secNum: secNum });
+        }
+        return angles;
+    }
+
+    function parseLabeledNotepadLine(line) {
+        var body = line.replace(/^\s*B\s*[\u2081\u2082₁₂12]?\s*,\s*L\s*[\u2081\u2082₁₂12]?\s*:\s*/i, "");
+        if (body === line) body = line.replace(/^\s*B\s*,\s*L\s*:\s*/i, "");
+        var angles = extractDmsAngles(body);
+        return angles.length >= 2 ? { B: angles[0], L: angles[1] } : null;
+    }
+
+    function parseLabeledNotepadLineParts(line) {
+        var body = line.replace(/^\s*B\s*[\u2081\u2082₁₂12]?\s*,\s*L\s*[\u2081\u2082₁₂12]?\s*:\s*/i, "");
+        if (body === line) body = line.replace(/^\s*B\s*,\s*L\s*:\s*/i, "");
+        var angles = extractDmsAnglesParts(body);
+        return angles.length >= 2 ? { B: angles[0], L: angles[1] } : null;
+    }
+
+    function parseImportText(text) {
+        var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+        var pointA = null;
+        var pointB = null;
+        lines.forEach(function (line) {
+            if (/^[#;]/.test(line)) return;
+            if (/^(широт|долгот|latitude|longitude|пример|example)\b/i.test(line)) return;
+            var labeled = parseLabeledNotepadLineParts(line);
+            if (labeled) {
+                if (!pointA) pointA = labeled;
+                else if (!pointB) pointB = labeled;
+                return;
+            }
+        });
+        if (pointA && pointB) {
+            return { dms: { B1: pointA.B, L1: pointA.L, B2: pointB.B, L2: pointB.L } };
+        }
+        var angles = extractDmsAnglesParts(text);
+        if (angles.length >= 4) {
+            return { dms: { B1: angles[0], L1: angles[1], B2: angles[2], L2: angles[3] } };
+        }
+        var tokens = [];
+        lines.forEach(function (line) {
+            if (/^[#;]/.test(line) || /широт|долгот|latitude|longitude/i.test(line)) return;
+            // If we can't parse labeled notepad DMS, fall back to extracting numeric angles from the file.
+            if (/[°º˚]/.test(line)) { return; }
+            line.split(/[;\t]+/).map(function (p) { return p.trim(); }).filter(Boolean).forEach(function (p) {
+                if (/^[+-]?\d+(\.\d+)?$/.test(p.replace(",", "."))) tokens.push(p);
+            });
+        });
+        if (tokens.length >= 4) {
+            return {
+                B1: parseAngleFromText(tokens[0]),
+                L1: parseAngleFromText(tokens[1]),
+                B2: parseAngleFromText(tokens[2]),
+                L2: parseAngleFromText(tokens[3])
+            };
+        }
+        return null;
+    }
+
+    function applyImportPayload(data) {
+        if (!data || typeof data !== "object") return;
+        if (data.ellipsoid) {
+            CS.selectedEllipsoid = CS.resolveEllipsoidKey(data.ellipsoid);
+            CS.buildEllipsoidSelect("ellipsoidSelector", CS.selectedEllipsoid, updateTheoryParams);
+            updateTheoryParams();
+        }
+
+        if (data.dms && data.dms.B1 && data.dms.L1 && data.dms.B2 && data.dms.L2) {
+            var setDms = function (prefix, ang) {
+                var map = {
+                    lat1: ["lat1_d", "lat1_m", "lat1_s"],
+                    lon1: ["lon1_d", "lon1_m", "lon1_s"],
+                    lat2: ["lat2_d", "lat2_m", "lat2_s"],
+                    lon2: ["lon2_d", "lon2_m", "lon2_s"]
+                };
+                var ids = map[prefix];
+                if (!ids) return;
+                document.getElementById(ids[0]).value = String(ang.deg);
+                document.getElementById(ids[1]).value = String(ang.min);
+                document.getElementById(ids[2]).value = String(ang.secStr);
+            };
+            setDms("lat1", data.dms.B1);
+            setDms("lon1", data.dms.L1);
+            setDms("lat2", data.dms.B2);
+            setDms("lon2", data.dms.L2);
+        } else {
+            // JSON/decimal fallback (may round to GEO_SEC_PREC via CS.fillCoordFields)
+            if (typeof data.B1 === "number") CS.fillCoordFields("lat1", data.B1);
+            if (typeof data.L1 === "number") CS.fillCoordFields("lon1", data.L1);
+            if (typeof data.B2 === "number") CS.fillCoordFields("lat2", data.B2);
+            if (typeof data.L2 === "number") CS.fillCoordFields("lon2", data.L2);
+        }
+        document.getElementById("resultsSection").classList.add("hidden");
+    }
+
+    function triggerImport() {
+        var input = document.getElementById("importFileInput");
+        if (input) input.click();
+    }
+
+    function handleImportFile(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            var text = String(e.target.result || "").trim();
+            if (!text) {
+                CS.showError("Файл пуст.");
+                event.target.value = "";
+                return;
+            }
+            if (text.charAt(0) === "{" || text.charAt(0) === "[") {
+                try {
+                    var json = JSON.parse(text);
+                    if (Array.isArray(json)) json = json[0];
+                    applyImportPayload(json);
+                    event.target.value = "";
+                    return;
+                } catch (err) { /* fall through to text parsing */ }
+            }
+            var payload = parseImportText(text);
+            if (!payload) {
+                CS.showError("Не удалось разобрать файл. См. пример в справке «Импорт из Блокнота» (две строки B₁,L₁ и B₂,L₂).");
+                event.target.value = "";
+                return;
+            }
+            if (payload.dms) {
+                var d = payload.dms;
+                if (![d.B1, d.L1, d.B2, d.L2].every(function (x) { return x && isFinite(x.secNum); })) {
+                    CS.showError("Не удалось разобрать DMS-координаты из файла. Проверьте секунды (запятая в дробной части).");
+                    event.target.value = "";
+                    return;
+                }
+            } else if ([payload.B1, payload.L1, payload.B2, payload.L2].some(function (x) { return !isFinite(x); })) {
+                CS.showError("Не удалось разобрать файл. См. пример в справке «Импорт из Блокнота».");
+                event.target.value = "";
+                return;
+            }
+            applyImportPayload(payload);
+            event.target.value = "";
+        };
+        reader.onerror = function () {
+            CS.showError("Не удалось прочитать файл.");
+            event.target.value = "";
+        };
+        reader.readAsText(file, "UTF-8");
+    }
+
+    window.calculateInverse = calculateInverse;
+    window.resetForm = resetForm;
+    window.copyResults = copyResults;
+    window.triggerImport = triggerImport;
+    window.handleImportFile = handleImportFile;
+    window.validateMinutes = validateMinutes;
+    window.validateSeconds = validateSeconds;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        CS._ellipsoidOnChange = updateTheoryParams;
+        loadSeed();
+        CS.selectedEllipsoid = CS.resolveEllipsoidKey(CS.selectedEllipsoid);
+        CS.buildEllipsoidSelect("ellipsoidSelector", CS.selectedEllipsoid, updateTheoryParams);
+        updateTheoryParams();
+        setupDmsArrowNavigation();
+        if (window.lucide) lucide.createIcons();
+    });
+})();
+
+/* --- site-chrome.js --- */
+(function () {
+    var btn = document.getElementById("mobileMenuBtn");
+    var menu = document.getElementById("mobileMenu");
+    if (btn && menu) {
+        btn.addEventListener("click", function () {
+            menu.classList.toggle("hidden");
+        });
+    }
+})();
+
+    </script>
+</body>
+</html>

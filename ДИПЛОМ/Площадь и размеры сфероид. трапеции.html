@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEOPOINT | Площадь и размеры сфероидической трапеции</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'geo-blue': '#3166FF',
+                        'geo-orange': '#FF6B31',
+                        'geo-lime': '#C1FF2C',
+                        'geo-purple': '#A437C6',
+                    },
+                    fontFamily: { 'inter': ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FDF8F5; overflow-x: hidden; scroll-behavior: smooth; }
+        .nav-pill { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 2px solid #3166FF; border-radius: 9999px; }
+        .nav-link { color: #1E293B; transition: all 0.2s ease; cursor: pointer; }
+        .nav-link:hover { color: #3166FF; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        #theory { scroll-margin-top: 100px; }
+        #calculators { scroll-margin-top: 100px; }
+        .logo-home { text-decoration: none; }
+        .input-field { border: 2px solid #E2E8F0; border-radius: 0.5rem; padding: 0.625rem 0.75rem; text-align: center; font-size: 0.875rem; transition: all 0.2s; width: 100%; }
+        .input-field:focus { outline: none; border-color: #3166FF; box-shadow: 0 0 0 3px rgba(49, 102, 255, 0.2); }
+        .input-field.error { border-color: #EF4444; background-color: #FEF2F2; }
+        .input-label { font-size: 0.7rem; color: #64748B; font-weight: 600; text-align: center; margin-top: 0.25rem; text-transform: uppercase; }
+        .dms-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+        .btn-primary { background: #3166FF; color: white; border-radius: 0.75rem; font-weight: 600; transition: all 0.3s; }
+        .btn-primary:hover { background: #2563EB; transform: translateY(-2px); }
+
+        .btn-primary, .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }        .btn-outline { background: transparent; border: 2px solid #3166FF; color: #3166FF; border-radius: 0.75rem; font-weight: 600; transition: all 0.3s; }
+        .btn-outline:hover { background: #3166FF; color: white; }
+        .btn-pdf { background: #FF6B31; color: white; border-radius: 0.75rem; font-weight: 600; transition: all 0.3s; }
+        .btn-pdf:hover { background: #EA580C; transform: translateY(-2px); }
+        .custom-select-trigger--plain { padding: 0.75rem 2.75rem 0.75rem 1rem; }
+        .custom-select-option--plain { padding: 0.75rem 1rem; }
+        .theory-params-fade { animation: paramsFade 0.4s ease; }
+        @keyframes paramsFade { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+        .ellipsoid-params-panel { padding: 0.25rem 0 0.5rem; }
+        .ellipsoid-params-subtitle { font-size: 0.875rem; opacity: 0.92; margin-bottom: 0.75rem; }
+        .ellipsoid-param-row {
+            display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+            padding: 0.7rem 1.1rem; margin-bottom: 0.5rem; background: rgba(255, 255, 255, 0.14);
+            border-radius: 9999px; font-size: 0.875rem; line-height: 1.25;
+        }
+        .ellipsoid-param-row:last-child { margin-bottom: 0; }
+        .ellipsoid-param-label { opacity: 0.95; }
+        .ellipsoid-param-value { font-weight: 600; text-align: right; white-space: nowrap; }
+        .custom-select-trigger .selected-ellipse-icon { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
+        .custom-select-trigger .selected-text { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .custom-select-option .option-ellipse-icon { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
+        .custom-select-option .option-check { width: 16px; height: 16px; flex-shrink: 0; opacity: 0; }
+        .custom-select-option.selected .option-check { opacity: 1; }
+
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+        .accordion-content.open { max-height: 1000px; }
+        .rotate-icon { transition: transform 0.3s ease; }
+        .rotate-icon.open { transform: rotate(180deg); }
+        .result-card { background: rgba(255, 255, 255, 0.2); border-radius: 1rem; padding: 1.5rem; }
+        .error-message { display: none; background: #FEF2F2; border: 2px solid #EF4444; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; }
+        .error-message.show { display: block; animation: shake 0.5s; }
+        .warning-text { color: #EF4444; font-size: 0.75rem; font-weight: 600; margin-top: 0.25rem; display: none; }
+        .warning-text.show { display: block; }
+        .theory-card { background: #3166FF; border-radius: 2rem; padding: 2rem; color: white; transition: all 0.3s ease; }
+        .theory-item { background: rgba(255, 255, 255, 0.1); border-radius: 1rem; overflow: hidden; margin-bottom: 0.75rem; }
+        .theory-item-header { padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.2s; }
+        .theory-item-header:hover { background: rgba(255, 255, 255, 0.15); }
+        .theory-item-title { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; }
+        .theory-icon { width: 1.25rem; height: 1.25rem; background: rgba(255, 255, 255, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .theory-icon svg { width: 0.75rem; height: 0.75rem; }
+        .btn-theory { background: #FF6B31; color: white; border-radius: 1rem; font-weight: 700; padding: 1rem 2rem; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-theory:hover { background: #EA580C; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(255, 107, 49, 0.4); }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .custom-select-wrapper { position: relative; width: 100%; }
+        .custom-select-trigger { width: 100%; background: #FFFFFF; border: 2px solid #E2E8F0; border-radius: 0.75rem; padding: 0.75rem 2.75rem 0.75rem 1rem; font-size: 0.875rem; font-weight: 600; color: #1E293B; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; transition: all 0.25s ease; user-select: none; }
+        .custom-select-trigger:hover { border-color: #93C5FD; background: #F8FAFC; }
+        .custom-select-trigger.open { border-color: #3166FF; box-shadow: 0 0 0 3px rgba(49, 102, 255, 0.15); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .custom-select-trigger .trigger-chevron { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); transition: transform 0.3s ease; color: #94A3B8; }
+        .custom-select-trigger.open .trigger-chevron { transform: translateY(-50%) rotate(180deg); color: #3166FF; }
+        .custom-select-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #FFFFFF; border: 2px solid #3166FF; border-top: 1px solid #E2E8F0; border-radius: 0 0 0.75rem 0.75rem; z-index: 100; overflow: hidden; box-shadow: 0 12px 32px rgba(49, 102, 255, 0.2); }
+        .custom-select-option { padding: 0.75rem 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
+        .custom-select-option:hover { background: #EFF6FF; color: #1E40AF; }
+        .custom-select-option.selected { background: #3166FF; color: #FFFFFF; font-weight: 600; }
+        .custom-select-option + .custom-select-option { border-top: 1px solid #F1F5F9; }
+        .logo-text { font-weight: 800; font-size: 1.5rem; letter-spacing: -0.02em; }
+        .logo-geo { color: #FF6B31; }
+        .logo-point { color: #3166FF; }
+    
+        /* site-chrome.css */
+/* Shared navigation and back controls (GEOPOINT) */
+.nav-pill {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 2px solid #3166FF;
+    border-radius: 9999px;
+}
+.nav-link {
+    color: #1E293B;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+.nav-link:hover {
+    color: #3166FF;
+}
+.nav-link-active {
+    color: #3166FF;
+    font-weight: 600;
+}
+.logo-home {
+    text-decoration: none;
+}
+.logo-text {
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+}
+.logo-geo {
+    color: #FF6B31;
+}
+.logo-point {
+    color: #3166FF;
+}
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    transition: opacity 0.25s ease, gap 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color: inherit;
+    text-decoration: none;
+}
+.back-link:hover {
+    opacity: 1;
+    gap: 12px;
+}
+.back-link .back-icon {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.back-link:hover .back-icon {
+    transform: translateX(-3px);
+}
+
+    </style>
+</head>
+<body class="min-h-screen">
+    <header class="fixed w-full top-0 z-50 pt-4 px-4" id="site-header">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-4 sm:px-8 py-3 sm:py-4 flex justify-between items-center shadow-lg gap-2">
+                <div class="flex items-center gap-1 min-w-0">
+                    <a href="index.html.html" class="logo-home logo-text">
+                        <span class="logo-geo">GEO</span><span class="logo-point">POINT</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html.html" class="nav-link text-base font-semibold" data-nav="home">Главная</a>
+                    <a href="index.html.html#calculators" class="nav-link nav-link-calculators text-base font-semibold nav-link-active" data-nav="calculators">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link text-base font-semibold" data-nav="theory">Теория</a>
+                    <a href="О проекте.HTML" class="nav-link text-base font-semibold" data-nav="about">О проекте</a>
+                    <a href="Справка.html" class="nav-link text-base font-semibold" data-nav="help">Справка</a>
+                </div>
+                <button type="button" class="md:hidden text-geo-blue shrink-0" id="mobileMenuBtn" aria-label="Открыть меню">
+                    <i data-lucide="menu" class="w-7 h-7"></i>
+                </button>
+            </nav>
+        </div>
+        <div class="md:hidden hidden bg-white rounded-2xl mt-2 mx-4 p-4 shadow-lg border border-geo-blue/30" id="mobileMenu">
+            <div class="flex flex-col space-y-3">
+                <a href="Главная страница.html" class="nav-link text-base font-semibold py-2" data-nav="home">Главная</a>
+                <a href="Главная страница.html#calculators" class="nav-link nav-link-calculators text-base font-semibold py-2 nav-link-active" data-nav="calculators">Калькуляторы</a>
+                <a href="Теория.html" class="nav-link text-base font-semibold py-2" data-nav="theory">Теория</a>
+                <a href="О проекте.HTML" class="nav-link text-base font-semibold py-2" data-nav="about">О проекте</a>
+                <a href="Справка.html" class="nav-link text-base font-semibold py-2" data-nav="help">Справка</a>
+            </div>
+        </div>
+    </header>
+
+
+    <main class="pt-32 pb-20">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="bg-geo-blue rounded-3xl p-8 mb-8 text-white">
+                <a href="Главная страница.html" class="back-link mb-6"><i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i> НАЗАД НА ГЛАВНУЮ</a>
+                <h1 class="text-2xl lg:text-3xl font-extrabold mb-4">ПЛОЩАДЬ И РАЗМЕРЫ РАМОК СФЕРОИДИЧЕСКОЙ ТРАПЕЦИИ</h1>
+                <p class="text-lg opacity-90">
+                    Вычисление площади и размеров рамок сфероидической трапеции заданного масштаба по координатам точки 
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" id="calculators">
+                <div class="bg-white rounded-3xl p-8 shadow-lg">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-geo-blue rounded-xl flex items-center justify-center">
+                            <i data-lucide="maximize" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">ИСХОДНЫЕ ДАННЫЕ</h2>
+                            <p class="text-sm text-gray-500">Введите координаты точки и выберите масштаб карты</p>
+                        </div>
+                    </div>
+
+                    <div id="errorMessage" class="error-message">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>
+                            <p id="errorText" class="text-red-600 font-medium"></p>
+                        </div>
+                    </div>
+
+                    <form id="trapForm" class="space-y-6" onsubmit="return false;">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                <span class="flex items-center gap-2"><i data-lucide="circle-dot" class="w-4 h-4 text-geo-blue"></i> Координатная основа</span>
+                            </label>
+                            <div id="ellipsoidSelector" class="custom-select-wrapper"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                <span class="flex items-center gap-2"><i data-lucide="maximize" class="w-4 h-4 text-geo-blue"></i> Масштаб карты</span>
+                            </label>
+                            <input type="hidden" id="scaleSelect" value="50000">
+                            <div id="scaleSelector" class="custom-select-wrapper"></div>
+                        </div>
+
+                        <div class="rounded-2xl border-2 border-slate-100 p-4 space-y-6">
+                            <p class="text-sm font-bold text-slate-700 flex items-center gap-2"><i data-lucide="crosshair" class="w-4 h-4 text-geo-blue"></i> Координаты точки (B, L)</p>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <span class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-geo-blue"></i> Широта B</span>
+                                </label>
+                                <div class="dms-group">
+                                    <div>
+                                        <input type="number" id="lat_d" class="input-field" placeholder="0" oninput="validateLatitude()">
+                                        <div class="input-label">Градусы (°)</div>
+                                        <p id="latWarning" class="warning-text">Превышает 90°</p>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="lat_m" class="input-field" placeholder="0" min="0" max="59" oninput="validateMinutes(this); validateLatitude()">
+                                        <div class="input-label">Минуты (')</div>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="lat_s" class="input-field" placeholder="0.00" step="0.0001" min="0" max="59.9999" oninput="validateSeconds(this); validateLatitude()">
+                                        <div class="input-label">Секунды (")</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <span class="flex items-center gap-2"><i data-lucide="globe" class="w-4 h-4 text-geo-blue"></i> Долгота L</span>
+                                </label>
+                                <div class="dms-group">
+                                    <div>
+                                        <input type="number" id="lon_d" class="input-field" placeholder="0" oninput="validateLongitude()">
+                                        <div class="input-label">Градусы (°)</div>
+                                        <p id="lonWarning" class="warning-text">Превышает 180°</p>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="lon_m" class="input-field" placeholder="0" min="0" max="59" oninput="validateMinutes(this); validateLongitude()">
+                                        <div class="input-label">Минуты (')</div>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="lon_s" class="input-field" placeholder="0.00" step="0.0001" min="0" max="59.9999" oninput="validateSeconds(this); validateLongitude()">
+                                        <div class="input-label">Секунды (")</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4 pt-2">
+                            <button type="button" onclick="calculateTrapezoid()" class="btn-primary flex-1 py-3 px-6">Рассчитать</button>
+                            <button type="button" onclick="resetForm()" class="btn-outline flex-1 py-3 px-6">Сбросить</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="theory-card" id="theory">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-white/30 rounded-xl flex items-center justify-center">
+                            <i data-lucide="book-open" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold">ТЕОРЕТИЧЕСКАЯ СПРАВКА</h2>
+                            <p class="text-sm opacity-80">Методика расчёта</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="theory-item">
+                            <div onclick="toggleAccordion('accordion1')" class="theory-item-header">
+                                <div class="theory-item-title">
+                                    <div class="theory-icon">
+                                        <i data-lucide="info" class="w-3 h-3"></i>
+                                    </div>
+                                    <span>Описание задачи</span>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-5 h-5 rotate-icon" id="icon-accordion1"></i>
+                            </div>
+                            <div id="accordion1" class="accordion-content bg-white/5">
+                                <div class="px-6 pb-4 text-sm opacity-90">
+                                    <p class="mb-2">Сфероидическая трапеция – это геометрическая фигура на поверхности эллипсоида, ограниченная меридианами и параллелями.</p>
+                                    <p class="mb-2">По геодезическим координатам точки на референц-эллипсоиде определяют лист топографической карты заданного масштаба, номенклатуру, координаты рамок сфероидической трапеции, площадь и размеры рамок на карте.</p>
+                                    <div class="bg-white/10 rounded-lg p-3 mt-2">
+                                        <p class="font-semibold mb-1">Дано:</p>
+                                        <ul class="space-y-1 text-xs">
+                                            <li>• Широта B и долгота L точки</li>
+                                            <li>• Масштаб карты и параметры эллипсоида</li>
+                                        </ul>
+                                    </div>
+                                    <div class="bg-white/10 rounded-lg p-3 mt-2">
+                                        <p class="font-semibold mb-1">Находят:</p>
+                                        <ul class="space-y-1 text-xs">
+                                            <li>• Номенклатуру листа и рамки трапеции</li>
+                                            <li>• Площадь на эллипсоиде (км²) и на карте (см²)</li>
+                                            <li>• Размеры рамок a₁, a₂, c′, d на карте (см)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="theory-item">
+                            <div onclick="toggleAccordion('accordion2')" class="theory-item-header">
+                                <div class="theory-item-title">
+                                    <div class="theory-icon">
+                                        <i data-lucide="globe" class="w-3 h-3"></i>
+                                    </div>
+                                    <span>Параметры эллипсоида</span>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-5 h-5 rotate-icon" id="icon-accordion2"></i>
+                            </div>
+                            <div id="accordion2" class="accordion-content bg-white/5">
+                                <div class="px-6 pb-4 text-sm opacity-90" id="theoryParamsContent">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="theory-item">
+                            <div onclick="toggleAccordion('accordion3')" class="theory-item-header">
+                                <div class="theory-item-title">
+                                    <div class="theory-icon">
+                                        <i data-lucide="flask-conical" class="w-3 h-3"></i>
+                                    </div>
+                                    <span>Методика вычислений</span>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-5 h-5 rotate-icon" id="icon-accordion3"></i>
+                            </div>
+                            <div id="accordion3" class="accordion-content bg-white/5">
+                                <div class="px-6 pb-4 text-sm opacity-90">
+                                    <p class="mb-2 font-semibold mt-2">Этапы расчёта:</p>
+                                    <div class="space-y-2">
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+                                            <p>По координатам точки и масштабу определяются рамки трапеции и номенклатура листа.</p>
+                                        </div>
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+                                            <p>Вычисляется площадь трапеции на эллипсоиде.</p>
+                                        </div>
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+                                            <p>Вычисляются размеры рамок трапеции.</p>
+                                        </div>
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+                                            <p>Формируется отчёт (PDF).</p>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <a href="Теория_Площадь и размеры.html" class="btn-theory w-full inline-flex items-center justify-center gap-2">
+                            <i data-lucide="book-open" class="w-5 h-5"></i>
+                            Изучить теорию
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultsSection" class="hidden bg-geo-blue rounded-3xl p-8 text-white mb-8">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i data-lucide="circle-check" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold">РЕЗУЛЬТАТ РАСЧЁТА</h2>
+                            <p class="text-sm opacity-80" id="resultSubtitle">—</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="savePdf()" class="btn-pdf px-5 py-2.5 flex items-center gap-2">
+                        <i data-lucide="file-down" class="w-5 h-5"></i> Сохранить PDF
+                    </button>
+                </div>
+                <div class="result-card mb-6">
+                    <p class="text-sm opacity-80 mb-1">Номенклатура листа</p>
+                    <p class="text-2xl font-bold tracking-wide" id="resNom">—</p>
+                </div>
+                <h3 class="font-bold mb-3">Рамки трапеции</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="result-card"><p class="opacity-80 text-xs mb-1">B₁ (юг)</p><p class="text-xl font-bold" id="resB1DMS">—</p></div>
+                    <div class="result-card"><p class="opacity-80 text-xs mb-1">B₂ (север)</p><p class="text-xl font-bold" id="resB2DMS">—</p></div>
+                    <div class="result-card"><p class="opacity-80 text-xs mb-1">L₁ (запад)</p><p class="text-xl font-bold" id="resL1DMS">—</p></div>
+                    <div class="result-card"><p class="opacity-80 text-xs mb-1">L₂ (восток)</p><p class="text-xl font-bold" id="resL2DMS">—</p></div>
+                </div>
+                <h3 class="font-bold mb-3">Площадь</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="result-card"><p class="opacity-80 text-xs">На эллипсоиде</p><p class="text-xl font-bold" id="resAreaKm">—</p><p class="text-xs opacity-70">км²</p></div>
+                    <div class="result-card"><p class="opacity-80 text-xs">На карте 1:<span id="resScale">50000</span></p><p class="text-xl font-bold" id="resAreaCm">—</p><p class="text-xs opacity-70">см²</p></div>
+                </div>
+                <h3 class="font-bold mb-3">Размеры рамок на карте, см</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="result-card"><p class="opacity-80 text-xs">a₁ (южн.)</p><p class="font-bold" id="resa1">—</p></div>
+                    <div class="result-card"><p class="opacity-80 text-xs">a₂ (север.)</p><p class="font-bold" id="resa2">—</p></div>
+                    <div class="result-card"><p class="opacity-80 text-xs">c′ (мерид.)</p><p class="font-bold" id="resc">—</p></div>
+                    <div class="result-card"><p class="opacity-80 text-xs">d (диаг.)</p><p class="font-bold" id="resd">—</p></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="pdfReportHost" class="fixed left-[-9999px] top-0" aria-hidden="true"></div>
+    <style>
+        .pdf-report { width: 794px; font-family: Inter, Arial, sans-serif; color: #1e293b; background: #fff; }
+        .pdf-report-header { background: linear-gradient(135deg, #3166ff 0%, #5b8cff 100%); color: #fff; padding: 28px 32px; border-radius: 16px 16px 0 0; }
+        .pdf-report-body { padding: 24px 32px 32px; }
+        .pdf-report-title { font-size: 22px; font-weight: 800; margin: 0 0 4px; letter-spacing: 0.02em; }
+        .pdf-report-sub { font-size: 13px; opacity: 0.9; margin: 0; }
+        .pdf-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .pdf-meta-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; }
+        .pdf-meta-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+        .pdf-meta-value { font-size: 15px; font-weight: 700; color: #0f172a; }
+        .pdf-section-title { font-size: 14px; font-weight: 700; color: #3166ff; margin: 18px 0 10px; }
+        .pdf-trap-wrap { background: #f8fbff; border: 2px solid #dbeafe; border-radius: 16px; padding: 20px 16px; margin: 8px 0 16px; overflow: visible; }
+        .pdf-trap-wrap svg { display: block; margin: 0 auto; overflow: visible; }
+        .pdf-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .pdf-table th { text-align: left; background: #eff6ff; color: #3166ff; padding: 10px 12px; font-weight: 600; }
+        .pdf-table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+        .pdf-footer { margin-top: 20px; font-size: 11px; color: #94a3b8; text-align: center; }
+        .pdf-corner-label { font-size: 11px; font-weight: 600; fill: #334155; }
+        .pdf-side-label { font-size: 12px; font-weight: 700; fill: #3166ff; }
+    </style>
+
+<footer class="bg-gray-900 text-white pt-20 pb-10" id="site-footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html.html" class="logo-home inline-block">
+                        <span class="logo-text text-2xl">
+                            <span class="logo-geo">GEO</span><span class="logo-point">POINT</span>
+                        </span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах СК-42, СК-95, ПЗ-90.11, ГСК-2011 и WGS-84. Точность, скорость и удобство.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.HTML" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Прямая задача.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="Обратная задача.html" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="Преобразование координат.html" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Площадь и размеры рамок сфероидической трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Все права защищены.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+    <script>
+/* GEOPOINT trapezoid — bundled scripts */
+
+/* --- calculator-shared.js --- */
+(function (global) {
+    "use strict";
+
+    var GEO_SEC_PREC = 3;
+    var GEO_DEG_PREC = 5;
+
+    var ELLIPSOIDS = {
+        sk42: { name: "СК-42", subtitle: "Эллипсоид Красовского:", a: 6378245.0, alpha: 1 / 298.3, color: "#3166FF" },
+        sk95: { name: "СК-95", subtitle: "Эллипсоид Красовского:", a: 6378245.0, alpha: 1 / 298.3, color: "#7C3AED" },
+        pz9011: { name: "ПЗ-90.11", subtitle: "Эллипсоид ПЗ-90.11:", a: 6378136.0, alpha: 1 / 298.25784, color: "#A437C6" },
+        gsk2011: { name: "ГСК-2011", subtitle: "Эллипсоид ГСК-2011:", a: 6378136.5, alpha: 1 / 298.256415, color: "#FF6B31" },
+        wgs84: { name: "WGS-84", subtitle: "Эллипсоид WGS-84:", a: 6378137.0, alpha: 1 / 298.257223563, color: "#C1FF2C" }
+    };
+
+    function resolveEllipsoidKey(key) {
+        if (!key) return "sk42";
+        if (ELLIPSOIDS[key]) return key;
+        if (key === "krasovsky") return "sk42";
+        if (key === "pz90") return "pz9011";
+        return "sk42";
+    }
+
+    Object.keys(ELLIPSOIDS).forEach(function (key) {
+        var ell = ELLIPSOIDS[key];
+        ell.b = ell.a * (1 - ell.alpha);
+        ell.f = ell.alpha;
+        ell.e2 = 1 - Math.pow(ell.b / ell.a, 2);
+        ell.e2_prime = ell.e2 / (1 - ell.e2);
+        if (global.GeodesyBessel) global.GeodesyBessel.prepareEllipsoid(ell);
+    });
+
+    function formatEllipsoidCompression(alpha) {
+        var denom = 1 / alpha;
+        var text = denom >= 100
+            ? String(Math.round(denom * 10000) / 10000)
+            : denom.toFixed(6).replace(/\.?0+$/, "");
+        return "1/" + text.replace(".", ",");
+    }
+
+    function formatMetricMeters(value, fractionDigits) {
+        return value.toLocaleString("ru-RU", {
+            minimumFractionDigits: fractionDigits,
+            maximumFractionDigits: fractionDigits
+        }) + " м";
+    }
+
+    function renderEllipsoidParamsHTML(ell) {
+        if (!ell) return "";
+        var subtitle = ell.subtitle || ("Эллипсоид " + ell.name + ":");
+        var rows = [
+            ["Большая полуось (a)", formatMetricMeters(ell.a, 0)],
+            ["Квадрат эксцентриситета (e\u00b2)", ell.e2.toFixed(8).replace(".", ",")],
+            ["Малая полуось (b)", formatMetricMeters(ell.b, 3)],
+            ["Сжатие (f)", formatEllipsoidCompression(ell.alpha)]
+        ];
+        var html = '<div class="ellipsoid-params-panel theory-params-fade">';
+        html += '<p class="ellipsoid-params-subtitle">' + subtitle + "</p>";
+        rows.forEach(function (row) {
+            html += '<div class="ellipsoid-param-row"><span class="ellipsoid-param-label">' + row[0]
+                + '</span><span class="ellipsoid-param-value">' + row[1] + "</span></div>";
+        });
+        html += "</div>";
+        return html;
+    }
+
+    function roundSec3(s) {
+        var v = Math.round(s * 1000) / 1000;
+        if (v >= 60) return 0;
+        return v;
+    }
+
+    function dmsToDecimal(d, m, s) {
+        var sign = (parseFloat(d) || 0) < 0 ? -1 : 1;
+        var absD = Math.abs(parseFloat(d) || 0);
+        return sign * (absD + (parseFloat(m) || 0) / 60 + (parseFloat(s) || 0) / 3600);
+    }
+
+    function decimalToDMS(decimal) {
+        var sign = decimal < 0 ? -1 : 1;
+        var v = Math.abs(decimal);
+        var degrees = Math.floor(v);
+        var minutesFloat = (v - degrees) * 60;
+        var minutes = Math.floor(minutesFloat);
+        var seconds = roundSec3((minutesFloat - minutes) * 60);
+        if (seconds >= 59.9995) { seconds = 0; minutes++; }
+        if (minutes >= 60) { minutes = 0; degrees++; }
+        return { degrees: sign * degrees, minutes: minutes, seconds: seconds };
+    }
+
+    function formatDMS(dms) {
+        var sign = dms.degrees < 0 ? "-" : "";
+        var absDeg = Math.abs(dms.degrees);
+        var secStr = dms.seconds.toFixed(GEO_SEC_PREC).padStart(GEO_SEC_PREC + 3, "0");
+        return sign + absDeg + "\u00b0" + String(dms.minutes).padStart(2, "0") + "'" + secStr + '"';
+    }
+
+    function formatDegDecimal(dec) {
+        var r = Math.round(dec * Math.pow(10, GEO_DEG_PREC)) / Math.pow(10, GEO_DEG_PREC);
+        return r.toFixed(GEO_DEG_PREC).replace(".", ",") + "\u00b0";
+    }
+
+    function setGeoResult(primaryId, secondaryId, decimalDeg) {
+        var elP = document.getElementById(primaryId);
+        var elS = document.getElementById(secondaryId);
+        if (elP) elP.textContent = formatDMS(decimalToDMS(decimalDeg));
+        if (elS) elS.textContent = formatDegDecimal(decimalDeg);
+    }
+
+    function fillCoordFields(prefix, decimalDeg) {
+        var dms = decimalToDMS(decimalDeg);
+        var dEl = document.getElementById(prefix + (prefix.indexOf("_") >= 0 ? "" : "_d"));
+        if (!dEl && prefix === "lat") {
+            document.getElementById("lat_d").value = Math.abs(dms.degrees) * (dms.degrees < 0 ? -1 : 1);
+            document.getElementById("lat_m").value = dms.minutes;
+            document.getElementById("lat_s").value = dms.seconds;
+            return;
+        }
+        var map = {
+            lat1: ["lat1_d", "lat1_m", "lat1_s"],
+            lon1: ["lon1_d", "lon1_m", "lon1_s"],
+            lat2: ["lat2_d", "lat2_m", "lat2_s"],
+            lon2: ["lon2_d", "lon2_m", "lon2_s"],
+            az1: ["az1_d", "az1_m", "az1_s"]
+        };
+        var ids = map[prefix];
+        if (!ids) return;
+        document.getElementById(ids[0]).value = dms.degrees;
+        document.getElementById(ids[1]).value = dms.minutes;
+        document.getElementById(ids[2]).value = dms.seconds;
+    }
+
+    function showError(msg) {
+        var box = document.getElementById("errorMessage");
+        if (!box) return;
+        var text = document.getElementById("errorText");
+        if (text) text.textContent = msg;
+        box.classList.add("show");
+        setTimeout(function () { box.classList.remove("show"); }, 5000);
+    }
+
+    function toggleAccordion(id) {
+        ["acc1", "acc2", "acc3", "accordion1", "accordion2", "accordion3"].forEach(function (aid) {
+            if (aid !== id) {
+                var el = document.getElementById(aid);
+                var ic = document.getElementById("icon-" + aid);
+                if (el) el.classList.remove("open");
+                if (ic) ic.classList.remove("open");
+            }
+        });
+        var content = document.getElementById(id);
+        var icon = document.getElementById("icon-" + id);
+        if (content) content.classList.toggle("open");
+        if (icon) icon.classList.toggle("open");
+    }
+
+    function buildEllipsoidSelect(containerId, selectedKey, onChange) {
+        var container = document.getElementById(containerId || "ellipsoidSelector");
+        if (!container) return;
+        var selected = ELLIPSOIDS[selectedKey];
+        var html = '<div class="custom-select-trigger" id="selectTrigger" onclick="CalculatorShared.toggleEllipsoidDropdown()">';
+        html += '<div class="w-5 h-5 rounded-full flex-shrink-0" style="background:' + selected.color + '"></div>';
+        html += '<span class="flex-1 text-left">' + selected.name + "</span>";
+        html += '<svg class="trigger-chevron w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></div>';
+        html += '<div class="custom-select-dropdown" id="selectDropdown" style="display:none;">';
+        Object.keys(ELLIPSOIDS).forEach(function (key) {
+            var ell = ELLIPSOIDS[key];
+            html += '<div class="custom-select-option' + (key === selectedKey ? " selected" : "") + '" data-key="' + key + '" onclick="CalculatorShared.selectEllipsoid(\'' + key + '\')">';
+            html += '<div class="w-5 h-5 rounded-full" style="background:' + ell.color + '"></div>';
+            html += '<span class="flex-1">' + ell.name + "</span></div>";
+        });
+        html += "</div>";
+        container.innerHTML = html;
+        CalculatorShared._ellipsoidOnChange = onChange || null;
+    }
+
+    var isDropdownOpen = false;
+
+    function toggleEllipsoidDropdown() {
+        var d = document.getElementById("selectDropdown");
+        var t = document.getElementById("selectTrigger");
+        if (isDropdownOpen) {
+            closeEllipsoidDropdown();
+            return;
+        }
+        if (typeof window.closeScaleDropdown === "function") window.closeScaleDropdown();
+        isDropdownOpen = true;
+        if (t) t.classList.add("open");
+        if (d) d.style.display = "block";
+    }
+
+    function closeEllipsoidDropdown() {
+        isDropdownOpen = false;
+        var d = document.getElementById("selectDropdown");
+        var t = document.getElementById("selectTrigger");
+        if (t) t.classList.remove("open");
+        if (d) d.style.display = "none";
+    }
+
+    function selectEllipsoid(key) {
+        CalculatorShared.selectedEllipsoid = key;
+        buildEllipsoidSelect("ellipsoidSelector", key, CalculatorShared._ellipsoidOnChange);
+        closeEllipsoidDropdown();
+        if (typeof CalculatorShared._ellipsoidOnChange === "function") {
+            CalculatorShared._ellipsoidOnChange(key);
+        }
+    }
+
+    document.addEventListener("click", function (e) {
+        var w = document.getElementById("ellipsoidSelector");
+        if (w && !w.contains(e.target) && isDropdownOpen) closeEllipsoidDropdown();
+    });
+
+    global.CalculatorShared = {
+        GEO_SEC_PREC: GEO_SEC_PREC,
+        GEO_DEG_PREC: GEO_DEG_PREC,
+        ELLIPSOIDS: ELLIPSOIDS,
+        selectedEllipsoid: "sk42",
+        resolveEllipsoidKey: resolveEllipsoidKey,
+        renderEllipsoidParamsHTML: renderEllipsoidParamsHTML,
+        dmsToDecimal: dmsToDecimal,
+        decimalToDMS: decimalToDMS,
+        formatDMS: formatDMS,
+        formatDegDecimal: formatDegDecimal,
+        setGeoResult: setGeoResult,
+        fillCoordFields: fillCoordFields,
+        showError: showError,
+        toggleAccordion: toggleAccordion,
+        buildEllipsoidSelect: buildEllipsoidSelect,
+        toggleEllipsoidDropdown: toggleEllipsoidDropdown,
+        closeEllipsoidDropdown: closeEllipsoidDropdown,
+        selectEllipsoid: selectEllipsoid,
+        _ellipsoidOnChange: null
+    };
+
+    global.dmsToDecimal = dmsToDecimal;
+    global.decimalToDMS = decimalToDMS;
+    global.formatDMS = formatDMS;
+    global.showError = showError;
+    global.toggleAccordion = toggleAccordion;
+    global.buildEllipsoidSelect = function () {
+        buildEllipsoidSelect("ellipsoidSelector", CalculatorShared.selectedEllipsoid, CalculatorShared._ellipsoidOnChange);
+    };
+    global.toggleDropdown = toggleEllipsoidDropdown;
+    global.selectOption = selectEllipsoid;
+    global.selectEllipsoid = selectEllipsoid;
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* --- calculator-trapezoid.js --- */
+(function () {
+    "use strict";
+
+    var CS = window.CalculatorShared;
+    var ELLIPSOIDS = CS.ELLIPSOIDS;
+
+    var RHO_SEC = 206264.8062;
+    var DEG_100K_LAT = 4 / 12;
+    var DEG_100K_LON = 6 / 12;
+    var LETTERS_50K = ["\u0410", "\u0411", "\u0412", "\u0413"];
+    var LETTERS_25K = ["\u0430", "\u0431", "\u0432", "\u0433"];
+    var SCALE_OPTIONS = [
+        { value: 1000000, label: "1 : 1 000 000" },
+        { value: 500000, label: "1 : 500 000" },
+        { value: 200000, label: "1 : 200 000" },
+        { value: 100000, label: "1 : 100 000" },
+        { value: 50000, label: "1 : 50 000" },
+        { value: 25000, label: "1 : 25 000" },
+        { value: 10000, label: "1 : 10 000" },
+        { value: 5000, label: "1 : 5 000" }
+    ];
+    var selectedScale = 50000;
+    var isScaleDropdownOpen = false;
+    var lastResult = null;
+
+    function getScaleLabel(value) {
+        var found = SCALE_OPTIONS.find(function (o) { return o.value === value; });
+        return found ? found.label : "1 : " + value.toLocaleString("ru-RU");
+    }
+
+    function buildScaleSelect() {
+        var container = document.getElementById("scaleSelector");
+        if (!container) return;
+        var label = getScaleLabel(selectedScale);
+        var chevron = '<svg class="trigger-chevron w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>';
+        var html = '<div class="custom-select-trigger custom-select-trigger--plain" id="scaleSelectTrigger" onclick="toggleScaleDropdown()">';
+        html += '<span class="selected-text">' + label + "</span>" + chevron + "</div>";
+        html += '<div class="custom-select-dropdown" id="scaleSelectDropdown" style="display:none;">';
+        SCALE_OPTIONS.forEach(function (opt) {
+            var sel = opt.value === selectedScale ? " selected" : "";
+            html += '<div class="custom-select-option custom-select-option--plain' + sel + '" data-scale="' + opt.value + '" onclick="selectScale(' + opt.value + ')">';
+            html += '<span class="option-text">' + opt.label + "</span></div>";
+        });
+        html += "</div>";
+        container.innerHTML = html;
+        var hidden = document.getElementById("scaleSelect");
+        if (hidden) hidden.value = String(selectedScale);
+    }
+
+    function toggleScaleDropdown() {
+        var d = document.getElementById("scaleSelectDropdown");
+        var t = document.getElementById("scaleSelectTrigger");
+        if (isScaleDropdownOpen) {
+            closeScaleDropdown();
+            return;
+        }
+        CS.closeEllipsoidDropdown();
+        isScaleDropdownOpen = true;
+        if (t) t.classList.add("open");
+        if (d) d.style.display = "block";
+    }
+
+    function closeScaleDropdown() {
+        isScaleDropdownOpen = false;
+        var d = document.getElementById("scaleSelectDropdown");
+        var t = document.getElementById("scaleSelectTrigger");
+        if (t) t.classList.remove("open");
+        if (d) d.style.display = "none";
+    }
+
+    function selectScale(value) {
+        selectedScale = value;
+        buildScaleSelect();
+        closeScaleDropdown();
+    }
+
+    function dmsToDec(d, m, s) {
+        return CS.dmsToDecimal(d, m, s);
+    }
+
+    function decToDmsStr(deg) {
+        return CS.formatDMS(CS.decimalToDMS(deg));
+    }
+
+    function formatDM(decimalDeg) {
+        var sign = decimalDeg < 0 ? "-" : "";
+        var v = Math.abs(decimalDeg);
+        var degrees = Math.floor(v);
+        var minutes = Math.round((v - degrees) * 60);
+        if (minutes >= 60) { minutes = 0; degrees++; }
+        return sign + degrees + "\u00b0" + String(minutes).padStart(2, "0") + "\u2032";
+    }
+
+    function setFrameResult(elementId, decimalDeg) {
+        var el = document.getElementById(elementId);
+        if (el) el.textContent = formatDM(decimalDeg);
+    }
+
+    function cornerLabel(B, L) {
+        return "B " + formatDM(B) + "\nL " + formatDM(L);
+    }
+
+    function ru(n, d) {
+        return Number(n).toFixed(d).replace(".", ",");
+    }
+
+    function updateTheoryParams() {
+        var e = ELLIPSOIDS[CS.selectedEllipsoid];
+        var el = document.getElementById("theoryParamsContent");
+        if (!el || !e) return;
+        el.innerHTML = CS.renderEllipsoidParamsHTML(e);
+    }
+
+    function M(B, ell) {
+        var r = B * Math.PI / 180;
+        var s = Math.sin(r);
+        var W = Math.sqrt(1 - ell.e2 * s * s);
+        return ell.a * (1 - ell.e2) / (W * W * W);
+    }
+
+    function N(B, ell) {
+        var r = B * Math.PI / 180;
+        var s = Math.sin(r);
+        return ell.a / Math.sqrt(1 - ell.e2 * s * s);
+    }
+
+    function normalizeLongitude(L) {
+        if (L < 0) return L + 360;
+        return L;
+    }
+
+    function getGridContext(B, L) {
+        var baseLat = Math.floor(B / 4) * 4;
+        var baseLon = Math.floor(L / 6) * 6;
+        return {
+            baseLat: baseLat,
+            baseLon: baseLon,
+            dLat: B - baseLat,
+            dLon: L - baseLon,
+            row100: Math.min(11, Math.max(0, Math.floor((B - baseLat) / DEG_100K_LAT))),
+            col100: Math.min(11, Math.max(0, Math.floor((L - baseLon) / DEG_100K_LON)))
+        };
+    }
+
+    function getNomenclature(B, L, scale) {
+        L = normalizeLongitude(L);
+        var ctx = getGridContext(B, L);
+        var row1m = Math.floor(B / 4) + 1;
+        var col1m = Math.floor(L / 6) + 31;
+        var letter = String.fromCharCode(64 + row1m);
+        var code = letter + "-" + col1m;
+        var dLat = ctx.dLat - ctx.row100 * DEG_100K_LAT;
+        var dLon = ctx.dLon - ctx.col100 * DEG_100K_LON;
+
+        if (scale <= 100000) {
+            code += "-" + ((11 - ctx.row100) * 12 + ctx.col100 + 1);
+        }
+        if (scale <= 50000) {
+            var halfLat50 = DEG_100K_LAT / 2;
+            var halfLon50 = DEG_100K_LON / 2;
+            var subRowSouth = Math.min(1, Math.floor(dLat / halfLat50));
+            var subColWest = Math.min(1, Math.floor(dLon / halfLon50));
+            code += "-" + LETTERS_50K[(1 - subRowSouth) * 2 + subColWest];
+            dLat -= subRowSouth * halfLat50;
+            dLon -= subColWest * halfLon50;
+        }
+        if (scale <= 25000) {
+            var halfLat25 = DEG_100K_LAT / 4;
+            var halfLon25 = DEG_100K_LON / 4;
+            var subRowSouth25 = Math.min(1, Math.floor(dLat / halfLat25));
+            var subColWest25 = Math.min(1, Math.floor(dLon / halfLon25));
+            code += "-" + LETTERS_25K[(1 - subRowSouth25) * 2 + subColWest25];
+            dLat -= subRowSouth25 * halfLat25;
+            dLon -= subColWest25 * halfLon25;
+        }
+        if (scale <= 10000) {
+            var halfLat10 = DEG_100K_LAT / 8;
+            var halfLon10 = DEG_100K_LON / 8;
+            var subRowSouth10 = Math.min(1, Math.floor(dLat / halfLat10));
+            var subColWest10 = Math.min(1, Math.floor(dLon / halfLon10));
+            code += "-" + ((1 - subRowSouth10) * 2 + subColWest10 + 1);
+        }
+        return code;
+    }
+
+    function getTrapezoidCoords(B, L, scale) {
+        L = normalizeLongitude(L);
+        var ctx = getGridContext(B, L);
+        var b1 = ctx.baseLat;
+        var b2 = ctx.baseLat + 4;
+        var l1 = ctx.baseLon;
+        var l2 = ctx.baseLon + 6;
+
+        if (scale <= 100000) {
+            b1 = ctx.baseLat + ctx.row100 * DEG_100K_LAT;
+            l1 = ctx.baseLon + ctx.col100 * DEG_100K_LON;
+            b2 = b1 + DEG_100K_LAT;
+            l2 = l1 + DEG_100K_LON;
+        }
+        if (scale <= 50000) {
+            var halfLat50 = DEG_100K_LAT / 2;
+            var halfLon50 = DEG_100K_LON / 2;
+            var dLat = ctx.dLat - ctx.row100 * DEG_100K_LAT;
+            var dLon = ctx.dLon - ctx.col100 * DEG_100K_LON;
+            var subRowSouth = Math.min(1, Math.floor(dLat / halfLat50));
+            var subColWest = Math.min(1, Math.floor(dLon / halfLon50));
+            b1 += subRowSouth * halfLat50;
+            l1 += subColWest * halfLon50;
+            b2 = b1 + halfLat50;
+            l2 = l1 + halfLon50;
+        }
+        if (scale <= 25000) {
+            var halfLat25 = DEG_100K_LAT / 4;
+            var halfLon25 = DEG_100K_LON / 4;
+            var dLat25 = ctx.dLat - ctx.row100 * DEG_100K_LAT;
+            var dLon25 = ctx.dLon - ctx.col100 * DEG_100K_LON;
+            dLat25 -= Math.min(1, Math.floor(dLat25 / (DEG_100K_LAT / 2))) * (DEG_100K_LAT / 2);
+            dLon25 -= Math.min(1, Math.floor(dLon25 / (DEG_100K_LON / 2))) * (DEG_100K_LON / 2);
+            var subRowSouth25 = Math.min(1, Math.floor(dLat25 / halfLat25));
+            var subColWest25 = Math.min(1, Math.floor(dLon25 / halfLon25));
+            b1 = ctx.baseLat + ctx.row100 * DEG_100K_LAT
+                + Math.min(1, Math.floor((ctx.dLat - ctx.row100 * DEG_100K_LAT) / (DEG_100K_LAT / 2))) * (DEG_100K_LAT / 2)
+                + subRowSouth25 * halfLat25;
+            l1 = ctx.baseLon + ctx.col100 * DEG_100K_LON
+                + Math.min(1, Math.floor((ctx.dLon - ctx.col100 * DEG_100K_LON) / (DEG_100K_LON / 2))) * (DEG_100K_LON / 2)
+                + subColWest25 * halfLon25;
+            b2 = b1 + halfLat25;
+            l2 = l1 + halfLon25;
+        }
+        if (scale <= 10000) {
+            var halfLat10 = DEG_100K_LAT / 8;
+            var halfLon10 = DEG_100K_LON / 8;
+            var dLat10 = ctx.dLat - ctx.row100 * DEG_100K_LAT;
+            var dLon10 = ctx.dLon - ctx.col100 * DEG_100K_LON;
+            var offLat50 = Math.min(1, Math.floor(dLat10 / (DEG_100K_LAT / 2))) * (DEG_100K_LAT / 2);
+            var offLon50 = Math.min(1, Math.floor(dLon10 / (DEG_100K_LON / 2))) * (DEG_100K_LON / 2);
+            dLat10 -= offLat50;
+            dLon10 -= offLon50;
+            var offLat25 = Math.min(1, Math.floor(dLat10 / (DEG_100K_LAT / 4))) * (DEG_100K_LAT / 4);
+            var offLon25 = Math.min(1, Math.floor(dLon10 / (DEG_100K_LON / 4))) * (DEG_100K_LON / 4);
+            dLat10 -= offLat25;
+            dLon10 -= offLon25;
+            var subRowSouth10 = Math.min(1, Math.floor(dLat10 / halfLat10));
+            var subColWest10 = Math.min(1, Math.floor(dLon10 / halfLon10));
+            b1 = ctx.baseLat + ctx.row100 * DEG_100K_LAT + offLat50 + offLat25 + subRowSouth10 * halfLat10;
+            l1 = ctx.baseLon + ctx.col100 * DEG_100K_LON + offLon50 + offLon25 + subColWest10 * halfLon10;
+            b2 = b1 + halfLat10;
+            l2 = l1 + halfLon10;
+        }
+        return { B1: b1, B2: b2, L1: l1, L2: l2 };
+    }
+
+    function areaFormula118(B1, B2, L1, L2, ell) {
+        var b = ell.b;
+        var e2 = ell.e2;
+        var dL = (L2 - L1) * Math.PI / 180;
+        var rad = function (x) { return x * Math.PI / 180; };
+        var s1 = Math.sin(rad(B1));
+        var s2 = Math.sin(rad(B2));
+        var bracket = (s2 - s1)
+            + (2 / 3) * e2 * (Math.pow(s2, 3) - Math.pow(s1, 3))
+            + (3 / 5) * e2 * e2 * (Math.pow(s2, 5) - Math.pow(s1, 5))
+            + (4 / 7) * e2 * e2 * e2 * (Math.pow(s2, 7) - Math.pow(s1, 7));
+        return b * b * dL * bracket;
+    }
+
+    function parallelCorrection(B, dB_sec, dL_sec) {
+        var r = B * Math.PI / 180;
+        var sinB = Math.sin(r);
+        var cosB = Math.cos(r);
+        return 1
+            + (dB_sec * dB_sec) / (24 * RHO_SEC * RHO_SEC) * sinB * sinB
+            + (dL_sec * dL_sec) / (24 * RHO_SEC * RHO_SEC) * cosB * cosB;
+    }
+
+    function meridianCorrection(B, dB_sec, dL_sec) {
+        var r = B * Math.PI / 180;
+        var sinB = Math.sin(r);
+        var sin2B = Math.sin(2 * r);
+        var cosB = Math.cos(r);
+        return 1
+            - (dL_sec * dL_sec) / (24 * RHO_SEC * RHO_SEC) * sin2B * cosB
+            - (dB_sec * dB_sec) / (24 * RHO_SEC * RHO_SEC) * sinB * sinB;
+    }
+
+    function frameSizes120(B1, B2, L1, L2, m, ell) {
+        var dB_sec = (B2 - B1) * 3600;
+        var dL_sec = (L2 - L1) * 3600;
+        var Bcp = (B1 + B2) / 2;
+        var N1 = N(B1, ell);
+        var N2 = N(B2, ell);
+        var Mcp = M(Bcp, ell);
+        var corrA1 = parallelCorrection(B1, dB_sec, dL_sec);
+        var corrA2 = parallelCorrection(B2, dB_sec, dL_sec);
+        var corrC = meridianCorrection(Bcp, dB_sec, dL_sec);
+        var cosB1 = Math.cos(B1 * Math.PI / 180);
+        var cosB2 = Math.cos(B2 * Math.PI / 180);
+        var a1_map_m = (N1 * cosB1 / m) * (dL_sec / RHO_SEC) * corrA1;
+        var a2_map_m = (N2 * cosB2 / m) * (dL_sec / RHO_SEC) * corrA2;
+        var c_map_m = (Mcp / m) * (dB_sec / RHO_SEC) * corrC;
+        var a1_cm = a1_map_m * 100;
+        var a2_cm = a2_map_m * 100;
+        var c_cm = c_map_m * 100;
+        var d_cm = Math.sqrt(a1_cm * a2_cm + c_cm * c_cm);
+        return {
+            a1_m: a1_map_m * m,
+            a2_m: a2_map_m * m,
+            c_m: c_map_m * m,
+            a1_cm: a1_cm,
+            a2_cm: a2_cm,
+            c_cm: c_cm,
+            d_cm: d_cm,
+            Mcp: Mcp
+        };
+    }
+
+    function calculateTrapezoid() {
+        var scaleEl = document.getElementById("scaleSelect");
+        var scale = parseInt(scaleEl ? scaleEl.value : selectedScale, 10);
+        var ell = ELLIPSOIDS[CS.selectedEllipsoid];
+        var B = dmsToDec(document.getElementById("lat_d").value, document.getElementById("lat_m").value, document.getElementById("lat_s").value);
+        var L = dmsToDec(document.getElementById("lon_d").value, document.getElementById("lon_m").value, document.getElementById("lon_s").value);
+        L = normalizeLongitude(L);
+        if (isNaN(B) || isNaN(L)) { CS.showError("Введите координаты точки"); return; }
+        if (Math.abs(B) > 90) { CS.showError("Широта должна быть в пределах ±90°"); return; }
+        if (Math.abs(L) > 180) { CS.showError("Долгота должна быть в пределах ±180°"); return; }
+        var coords = getTrapezoidCoords(B, L, scale);
+        var nom = getNomenclature(B, L, scale);
+        var area_m2 = areaFormula118(coords.B1, coords.B2, coords.L1, coords.L2, ell);
+        var frames = frameSizes120(coords.B1, coords.B2, coords.L1, coords.L2, scale, ell);
+        var area_km2 = area_m2 / 1e6;
+        var area_map_cm2 = ((frames.a1_cm + frames.a2_cm) / 2) * frames.c_cm;
+        lastResult = { B: B, L: L, scale: scale, ell: ell.name, nom: nom, coords: coords, area_km2: area_km2, area_map_cm2: area_map_cm2, frames: frames };
+        document.getElementById("resultSubtitle").textContent = ell.name + " | 1:" + scale.toLocaleString("ru-RU");
+        document.getElementById("resNom").textContent = nom;
+        setFrameResult("resB1DMS", coords.B1);
+        setFrameResult("resB2DMS", coords.B2);
+        setFrameResult("resL1DMS", coords.L1);
+        setFrameResult("resL2DMS", coords.L2);
+        document.getElementById("resAreaKm").textContent = ru(area_km2, 4);
+        document.getElementById("resAreaCm").textContent = ru(area_map_cm2, 4);
+        document.getElementById("resScale").textContent = scale.toLocaleString("ru-RU");
+        document.getElementById("resa1").textContent = ru(frames.a1_cm, 4);
+        document.getElementById("resa2").textContent = ru(frames.a2_cm, 4);
+        document.getElementById("resc").textContent = ru(frames.c_cm, 4);
+        document.getElementById("resd").textContent = ru(frames.d_cm, 4);
+        document.getElementById("resultsSection").classList.remove("hidden");
+        document.getElementById("resultsSection").scrollIntoView({ behavior: "smooth" });
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function buildTrapezoidSvg(c, f, pointB, pointL) {
+        var a1 = f.a1_cm;
+        var a2 = f.a2_cm;
+        var cc = f.c_cm;
+        var vbW = 500;
+        var vbH = 360;
+        var padT = 56;
+        var padB = 52;
+        var padX = 100;
+        var drawW = vbW - padX * 2;
+        var drawH = vbH - padT - padB;
+        var sf = Math.min(drawW / Math.max(a1, a2, 1), drawH / Math.max(cc, 1)) * 0.72;
+        var w1 = a1 * sf;
+        var w2 = a2 * sf;
+        var h = cc * sf;
+        var cx = vbW / 2;
+        var yb = padT + drawH - 8;
+        var yt = yb - h;
+        var xbl = cx - w1 / 2;
+        var xbr = cx + w1 / 2;
+        var xtl = cx - w2 / 2;
+        var xtr = cx + w2 / 2;
+        var pts = xbl + "," + yb + " " + xbr + "," + yb + " " + xtr + "," + yt + " " + xtl + "," + yt;
+        var diagX = (xbl + xtr) / 2;
+        var diagY = (yb + yt) / 2;
+        var fx = (pointL - c.L1) / (c.L2 - c.L1);
+        var fy = (pointB - c.B1) / (c.B2 - c.B1);
+        fx = Math.max(0, Math.min(1, fx));
+        fy = Math.max(0, Math.min(1, fy));
+        var px = (xbl + fx * (xbr - xbl)) * (1 - fy) + (xtl + fx * (xtr - xtl)) * fy;
+        var py = yb - fy * (yb - yt);
+        var sw = cornerLabel(c.B1, c.L1).split("\n");
+        var se = cornerLabel(c.B1, c.L2).split("\n");
+        var ne = cornerLabel(c.B2, c.L2).split("\n");
+        var nw = cornerLabel(c.B2, c.L1).split("\n");
+        var lineH = 14;
+        function cornerText(x, y0, anchor, lines) {
+            return '<text class="pdf-corner-label" x="' + x + '" y="' + y0 + '" text-anchor="' + anchor + '">'
+                + '<tspan x="' + x + '" dy="0">' + lines[0] + '</tspan>'
+                + '<tspan x="' + x + '" dy="' + lineH + '">' + lines[1] + '</tspan></text>';
+        }
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="' + vbH + '" viewBox="0 0 ' + vbW + ' ' + vbH + '" style="max-width:480px">'
+            + '<rect x="0" y="0" width="' + vbW + '" height="' + vbH + '" fill="transparent"/>'
+            + '<polygon points="' + pts + '" fill="#eef4ff" stroke="#3166ff" stroke-width="2.5"/>'
+            + '<line x1="' + xbl + '" y1="' + yb + '" x2="' + xtr + '" y2="' + yt + '" stroke="#FF6B31" stroke-width="1.5" stroke-dasharray="6 4"/>'
+            + '<text class="pdf-side-label" x="' + cx + '" y="' + (yb + 22) + '" text-anchor="middle">a\u2081 = ' + ru(a1, 2) + ' \u0441\u043c</text>'
+            + '<text class="pdf-side-label" x="' + cx + '" y="' + (yt - 16) + '" text-anchor="middle">a\u2082 = ' + ru(a2, 2) + ' \u0441\u043c</text>'
+            + '<text class="pdf-side-label" x="' + (xbl - 18) + '" y="' + ((yb + yt) / 2) + '" text-anchor="end" transform="rotate(-90 ' + (xbl - 18) + ' ' + ((yb + yt) / 2) + ')">c\u2032 = ' + ru(cc, 2) + ' \u0441\u043c</text>'
+            + '<text class="pdf-side-label" x="' + diagX + '" y="' + diagY + '" text-anchor="middle" fill="#FF6B31">d = ' + ru(f.d_cm, 2) + ' \u0441\u043c</text>'
+            + cornerText(xbl - 10, yb + 20, "end", sw)
+            + cornerText(xbr + 10, yb + 20, "start", se)
+            + cornerText(xtr + 10, yt - 38, "start", ne)
+            + cornerText(xtl - 10, yt - 38, "end", nw)
+            + '<circle cx="' + px + '" cy="' + py + '" r="5" fill="#FF6B31" stroke="#fff" stroke-width="1.5"/>'
+            + '<text class="pdf-corner-label" x="' + (px + 10) + '" y="' + (py + 4) + '" font-size="10" fill="#ea580c">\u0442\u043e\u0447\u043a\u0430</text>'
+            + "</svg>";
+    }
+
+    function buildPdfReportHtml(r) {
+        var f = r.frames;
+        var c = r.coords;
+        var dateStr = new Date().toLocaleString("ru-RU");
+        return '<div class="pdf-report" id="pdfReport">'
+            + '<div class="pdf-report-header">'
+            + '<p class="pdf-report-title">GEOPOINT</p>'
+            + '<p class="pdf-report-sub">\u0421\u0444\u0435\u0440\u043e\u0438\u0434\u0438\u0447\u0435\u0441\u043a\u0430\u044f \u0442\u0440\u0430\u043f\u0435\u0446\u0438\u044f \u2014 \u043e\u0442\u0447\u0451\u0442 \u0440\u0430\u0441\u0447\u0451\u0442\u0430</p>'
+            + "</div>"
+            + '<div class="pdf-report-body">'
+            + '<div class="pdf-meta-grid">'
+            + '<div class="pdf-meta-card"><div class="pdf-meta-label">\u041d\u043e\u043c\u0435\u043d\u043a\u043b\u0430\u0442\u0443\u0440\u0430</div><div class="pdf-meta-value">' + r.nom + "</div></div>"
+            + '<div class="pdf-meta-card"><div class="pdf-meta-label">\u041c\u0430\u0441\u0448\u0442\u0430\u0431</div><div class="pdf-meta-value">1:' + r.scale.toLocaleString("ru-RU") + "</div></div>"
+            + '<div class="pdf-meta-card"><div class="pdf-meta-label">\u042d\u043b\u043b\u0438\u043f\u0441\u043e\u0438\u0434</div><div class="pdf-meta-value">' + r.ell + "</div></div>"
+            + '<div class="pdf-meta-card"><div class="pdf-meta-label">\u0414\u0430\u0442\u0430</div><div class="pdf-meta-value">' + dateStr + "</div></div>"
+            + "</div>"
+            + '<div class="pdf-meta-card" style="margin-bottom:12px"><div class="pdf-meta-label">\u041a\u043e\u043e\u0440\u0434\u0438\u043d\u0430\u0442\u044b \u0442\u043e\u0447\u043a\u0438</div><div class="pdf-meta-value">B = ' + decToDmsStr(r.B) + ", L = " + decToDmsStr(r.L) + "</div></div>"
+            + '<p class="pdf-section-title">\u0421\u0445\u0435\u043c\u0430 \u0442\u0440\u0430\u043f\u0435\u0446\u0438\u0438 (\u043a\u043e\u043e\u0440\u0434\u0438\u043d\u0430\u0442\u044b \u0443\u0433\u043b\u043e\u0432, \u0433\u0440\u0430\u0434\u0443\u0441\u044b \u0438 \u043c\u0438\u043d\u0443\u0442\u044b)</p>'
+            + '<div class="pdf-trap-wrap">' + buildTrapezoidSvg(c, f, r.B, r.L) + "</div>"
+            + '<p class="pdf-section-title">\u0420\u0430\u043c\u043a\u0438 \u0442\u0440\u0430\u043f\u0435\u0446\u0438\u0438</p>'
+            + '<table class="pdf-table"><thead><tr><th>\u041f\u0430\u0440\u0430\u043c\u0435\u0442\u0440</th><th>\u0417\u043d\u0430\u0447\u0435\u043d\u0438\u0435</th></tr></thead><tbody>'
+            + "<tr><td>B\u2081 (\u044e\u0433)</td><td>" + formatDM(c.B1) + "</td></tr>"
+            + "<tr><td>B\u2082 (\u0441\u0435\u0432\u0435\u0440)</td><td>" + formatDM(c.B2) + "</td></tr>"
+            + "<tr><td>L\u2081 (\u0437\u0430\u043f\u0430\u0434)</td><td>" + formatDM(c.L1) + "</td></tr>"
+            + "<tr><td>L\u2082 (\u0432\u043e\u0441\u0442\u043e\u043a)</td><td>" + formatDM(c.L2) + "</td></tr>"
+            + "</tbody></table>"
+            + '<p class="pdf-section-title">\u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u044b</p>'
+            + '<table class="pdf-table"><thead><tr><th>\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c</th><th>\u0417\u043d\u0430\u0447\u0435\u043d\u0438\u0435</th></tr></thead><tbody>'
+            + "<tr><td>\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u043d\u0430 \u044d\u043b\u043b\u0438\u043f\u0441\u043e\u0438\u0434\u0435 (1.18)</td><td>" + ru(r.area_km2, 4) + " \u043a\u043c\u00b2</td></tr>"
+            + "<tr><td>\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u043d\u0430 \u043a\u0430\u0440\u0442\u0435 1:" + r.scale.toLocaleString("ru-RU") + "</td><td>" + ru(r.area_map_cm2, 4) + " \u0441\u043c\u00b2</td></tr>"
+            + "<tr><td>a\u2081 (\u044e\u0436\u043d.)</td><td>" + ru(f.a1_cm, 4) + " \u0441\u043c</td></tr>"
+            + "<tr><td>a\u2082 (\u0441\u0435\u0432.)</td><td>" + ru(f.a2_cm, 4) + " \u0441\u043c</td></tr>"
+            + "<tr><td>c\u2032 (\u043c\u0435\u0440\u0438\u0434.)</td><td>" + ru(f.c_cm, 4) + " \u0441\u043c</td></tr>"
+            + "<tr><td>d (\u0434\u0438\u0430\u0433., \u221a(a\u2081\u00b7a\u2082+c\u2032\u00b2))</td><td>" + ru(f.d_cm, 4) + " \u0441\u043c</td></tr>"
+            + "</tbody></table>"
+            + '<p class="pdf-footer">\u00a9 GEOPOINT </p>'
+            + "</div></div>";
+    }
+
+    function savePdf() {
+        if (!lastResult) { CS.showError("\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u044b\u043f\u043e\u043b\u043d\u0438\u0442\u0435 \u0440\u0430\u0441\u0447\u0451\u0442"); return; }
+        var host = document.getElementById("pdfReportHost");
+        if (!host || !window.html2canvas || !window.jspdf) {
+            CS.showError("PDF-\u0431\u0438\u0431\u043b\u0438\u043e\u0442\u0435\u043a\u0438 \u043d\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043d\u044b");
+            return;
+        }
+        host.innerHTML = buildPdfReportHtml(lastResult);
+        var reportEl = document.getElementById("pdfReport");
+        var btn = document.querySelector("[onclick=\"savePdf()\"]");
+        if (btn) { btn.disabled = true; btn.textContent = "\u0424\u043e\u0440\u043c\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 PDF\u2026"; }
+        html2canvas(reportEl, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            logging: false,
+            width: reportEl.scrollWidth,
+            height: reportEl.scrollHeight,
+            windowWidth: reportEl.scrollWidth,
+            windowHeight: reportEl.scrollHeight,
+            onclone: function (doc) {
+                var cloned = doc.getElementById("pdfReport");
+                if (cloned) {
+                    cloned.style.overflow = "visible";
+                    var wrap = cloned.querySelector(".pdf-trap-wrap");
+                    if (wrap) wrap.style.overflow = "visible";
+                }
+            }
+        }).then(function (canvas) {
+            var img = canvas.toDataURL("image/jpeg", 0.95);
+            var jsPDF = window.jspdf.jsPDF;
+            var pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+            var pageW = pdf.internal.pageSize.getWidth();
+            var pageH = pdf.internal.pageSize.getHeight();
+            var margin = 8;
+            var imgW = pageW - margin * 2;
+            var imgH = (canvas.height * imgW) / canvas.width;
+            if (imgH > pageH - margin * 2) {
+                imgH = pageH - margin * 2;
+                imgW = (canvas.width * imgH) / canvas.height;
+            }
+            pdf.addImage(img, "JPEG", margin, margin, imgW, imgH);
+            pdf.save("GEOPOINT_trapezoid_" + lastResult.nom.replace(/-/g, "_") + ".pdf");
+            host.innerHTML = "";
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="file-down" class="w-5 h-5"></i> \u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c PDF';
+                if (window.lucide) lucide.createIcons();
+            }
+        }).catch(function () {
+            host.innerHTML = "";
+            CS.showError("\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0437\u0434\u0430\u0442\u044c PDF");
+            if (btn) { btn.disabled = false; }
+        });
+    }
+
+    function validateLatitude() {
+        var B = dmsToDec(document.getElementById("lat_d").value, document.getElementById("lat_m").value, document.getElementById("lat_s").value);
+        var w = document.getElementById("latWarning");
+        var i = document.getElementById("lat_d");
+        if (Math.abs(B) > 90) { w.classList.add("show"); i.classList.add("error"); }
+        else { w.classList.remove("show"); i.classList.remove("error"); }
+    }
+
+    function validateLongitude() {
+        var L = dmsToDec(document.getElementById("lon_d").value, document.getElementById("lon_m").value, document.getElementById("lon_s").value);
+        var w = document.getElementById("lonWarning");
+        var i = document.getElementById("lon_d");
+        if (Math.abs(L) > 180) { w.classList.add("show"); i.classList.add("error"); }
+        else { w.classList.remove("show"); i.classList.remove("error"); }
+    }
+
+    function validateMinutes(inp) {
+        var v = parseFloat(inp.value);
+        if (inp.value !== "" && !isNaN(v) && (v < 0 || v > 59)) inp.classList.add("error");
+        else inp.classList.remove("error");
+    }
+
+    function validateSeconds(inp) {
+        var v = parseFloat(inp.value);
+        if (inp.value !== "" && !isNaN(v) && (v < 0 || v > 59.9999)) inp.classList.add("error");
+        else inp.classList.remove("error");
+    }
+
+    function resetForm() {
+        document.getElementById("trapForm").reset();
+        document.getElementById("resultsSection").classList.add("hidden");
+        lastResult = null;
+        CS.selectedEllipsoid = "sk42";
+        CS.buildEllipsoidSelect("ellipsoidSelector", CS.selectedEllipsoid, updateTheoryParams);
+        selectedScale = 50000;
+        buildScaleSelect();
+        updateTheoryParams();
+    }
+
+    window.calculateTrapezoid = calculateTrapezoid;
+    window.toggleScaleDropdown = toggleScaleDropdown;
+    window.selectScale = selectScale;
+    window.closeScaleDropdown = closeScaleDropdown;
+    window.savePdf = savePdf;
+    window.resetForm = resetForm;
+    window.validateLatitude = validateLatitude;
+    window.validateLongitude = validateLongitude;
+    window.validateMinutes = validateMinutes;
+    window.validateSeconds = validateSeconds;
+    window.toggleAccordion = CS.toggleAccordion;
+
+    document.addEventListener("click", function (e) {
+        var scaleWrap = document.getElementById("scaleSelector");
+        if (scaleWrap && !scaleWrap.contains(e.target) && isScaleDropdownOpen) closeScaleDropdown();
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        CS._ellipsoidOnChange = updateTheoryParams;
+        CS.selectedEllipsoid = CS.resolveEllipsoidKey(CS.selectedEllipsoid);
+        CS.buildEllipsoidSelect("ellipsoidSelector", CS.selectedEllipsoid, updateTheoryParams);
+        buildScaleSelect();
+        updateTheoryParams();
+        if (window.lucide) lucide.createIcons();
+    });
+})();
+
+/* --- site-chrome.js --- */
+(function () {
+    var btn = document.getElementById("mobileMenuBtn");
+    var menu = document.getElementById("mobileMenu");
+    if (btn && menu) {
+        btn.addEventListener("click", function () {
+            menu.classList.toggle("hidden");
+        });
+    }
+})();
+
+    </script>
+</body>
+</html>

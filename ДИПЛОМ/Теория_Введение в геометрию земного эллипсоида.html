@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Введение в геометрию земного эллипсоида | GEOPOINT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/300.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/500.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/700.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/800.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "geo-orange": "#FF6B31",
+                        "geo-orange-dark": "#EA580C",
+                        "geo-blue": "#3166FF",
+                        "geo-light": "#EFF6FF"
+                    },
+                    fontFamily: { inter: ["Inter", "sans-serif"] }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background: #FDF8F5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            color: #0f172a;
+            font-size: 1.05rem;
+        }
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #3166FF;
+            border-radius: 9999px;
+        }
+        .nav-link { color: #1E293B; transition: all .2s ease; cursor: pointer; font-size: 1.05rem; }
+        .nav-link:hover { color: #3166FF; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            opacity: 0.85;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .back-link:hover { opacity: 1; gap: 12px; }
+        .back-link .back-icon { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .back-link:hover .back-icon { transform: translateX(-3px); }
+        .hero-title { letter-spacing: .01em; }
+        .section-title { font-size: 1.75rem; font-weight: 800; line-height: 1.2; }
+        .glass-card { background: #fff; border: 1px solid #edf1f7; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08); }
+        .section-heading-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #fff;
+        }
+        .section-heading-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); }
+        .section-heading-icon.blue { background: linear-gradient(135deg, #3166FF, #1E40AF); }
+        .section-heading-icon.green { background: linear-gradient(135deg, #10B981, #059669); }
+        .section-heading-icon.purple { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+        .info-note {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1.25rem 1.5rem;
+            border-radius: 1rem;
+            margin-top: 1.5rem;
+        }
+        .info-note svg { flex-shrink: 0; margin-top: 2px; }
+        .info-note p { font-size: 0.95rem; color: #374151; line-height: 1.6; }
+        .info-note.green { background: #F0FDF4; border: 1px solid #BBF7D0; }
+        .info-note.green svg { color: #10B981; }
+        .info-note.blue { background: #EFF6FF; border: 1px solid #BFDBFE; }
+        .info-note.blue svg { color: #3166FF; }
+        .info-note.warn { background: #FFF7ED; border: 1px solid #FED7AA; }
+        .info-note.warn svg { color: #FF6B31; }
+        .formula-card {
+            background: #fff;
+            border: 1px solid #E8ECF0;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow-x: auto;
+        }
+        .formula-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #3166FF;
+            margin-bottom: 1.25rem;
+        }
+        .formula-line {
+            display: block;
+            padding: 0.25rem 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.25rem;
+            color: #1e293b;
+            text-align: center;
+        }
+        .formula-line + .formula-line { margin-top: 0.15rem; }
+        .formula-line.wide {
+            font-size: 1.05rem;
+            line-height: 1.85;
+            white-space: nowrap;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 0.25em;
+            font-size: 0.9em;
+        }
+        .frac > span { display: block; padding: 0.15em 0.3em; text-align: center; }
+        .frac span.bottom { border-top: 1.5px solid #1e293b; }
+        .sqrt {
+            display: inline-block;
+            border-top: 1.5px solid #1e293b;
+            padding: 0 0.15em;
+            margin-left: 0.1em;
+            vertical-align: middle;
+        }
+        .math-group { display: inline; white-space: normal; }
+        sup, sub { font-size: 0.75em; }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
+        .feature-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            font-size: 0.95rem;
+            color: #334155;
+            line-height: 1.55;
+        }
+        .feature-list li::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #3166FF;
+            flex-shrink: 0;
+            margin-top: 0.5rem;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+        .data-table th, .data-table td {
+            padding: 0.75rem 1rem;
+            border: 1px solid #E2E8F0;
+            text-align: left;
+        }
+        .data-table th {
+            background: #F1F5F9;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .data-table tr:nth-child(even) { background: #F8FAFC; }
+        .figure-img {
+            width: 100%;
+            max-width: min(560px, 90vw);
+            height: auto;
+        }
+        .denotations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .denotation-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .denotation-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #FF6B31;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-family: 'Times New Roman', serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(255, 107, 49, 0.3);
+        }
+        .denotation-icon.blue-icon { background: #3166FF; box-shadow: 0 4px 10px rgba(49,102,255,0.3); }
+        .denotation-icon.green-icon { background: #10B981; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+        .denotation-icon.purple-icon { background: #8B5CF6; box-shadow: 0 4px 10px rgba(139,92,246,0.3); }
+        .denotation-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0f172a;
+            margin-bottom: 0.2rem;
+        }
+        .denotation-text {
+            font-size: 0.85rem;
+            color: #64748B;
+            line-height: 1.4;
+        }
+        .expandable-section {
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            background: #fff;
+            transition: all .3s ease;
+        }
+        .expandable-section.open { box-shadow: 0 8px 24px rgba(255,107,49,0.08); border-color: #FED7AA; }
+        .expandable-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            transition: background .2s;
+            user-select: none;
+        }
+        .expandable-header:hover { background: #FFF7ED; }
+        .expandable-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .expandable-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); color: #fff; }
+        .expandable-title { font-weight: 700; font-size: 1rem; color: #0f172a; }
+        .expandable-subtitle { font-size: .8rem; color: #94A3B8; }
+        .expandable-arrow {
+            margin-left: auto;
+            transition: transform .3s ease;
+            color: #94A3B8;
+        }
+        .expandable-section.open .expandable-arrow { transform: rotate(180deg); color: #FF6B31; }
+        .expandable-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .4s ease;
+        }
+        .expandable-section.open .expandable-body { max-height: 10000px; }
+        .expandable-body-inner { padding: 0 1.5rem 1.5rem; }
+        @media (max-width: 640px) {
+            .section-title { font-size: 1.5rem; }
+            .denotations-grid { grid-template-columns: 1fr; }
+            .formula-line.wide { white-space: normal; width: auto; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="fixed w-full top-0 z-50 pt-4 px-4">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-8 py-4 flex justify-between items-center shadow-lg">
+                <a href="index.html" class="flex items-center gap-2">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="Главная страница.html" class="nav-link text-base font-semibold">Главная</a>
+                    <a href="Главная страница.html#calculators" class="nav-link text-base font-semibold">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link nav-link-active text-base font-semibold">Теория</a>
+                    <a href="О проекте.html" class="nav-link text-base font-semibold">О проекте</a>
+                    <a href="Справка.html" class="nav-link text-base font-semibold">Справка</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-4">
+        <div class="max-w-6xl mx-auto pt-0 pb-6">
+            <div class="bg-geo-blue rounded-3xl p-8 mb-8 text-white shadow-lg">
+                <a href="Теория.html" class="back-link mb-6">
+                    <i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i>
+                    НАЗАД К ТЕМАМ
+                </a>
+                <h1 class="hero-title section-title max-w-6xl mb-4">ВВЕДЕНИЕ В ГЕОМЕТРИЮ ЗЕМНОГО ЭЛЛИПСОИДА</h1>
+                <p class="text-blue-100 text-[1.1rem] max-w-6xl leading-relaxed">Математическая модель Земли, параметры основных эллипсоидов (Красовского, WGS-84, ПЗ-90.11, ГСК-2011) и радиусы кривизны</p>
+            </div>
+
+            <!-- ВВЕДЕНИЕ -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon orange">
+                        <i data-lucide="book-open" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">ВВЕДЕНИЕ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Математическая основа высшей геодезии</p>
+                    </div>
+                </div>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Современная геодезия решает фундаментальную задачу точного определения взаимного положения точек земной поверхности и околоземного пространства в строго заданных системах координат. Математической основой этих построений выступает <strong>земной эллипсоид</strong> – геометрическая модель Земли.
+                </p>
+                <p class="text-slate-600 leading-relaxed">
+                    В зависимости от масштаба и региона применения используются либо <strong>общий земной эллипсоид</strong>, наилучшим образом сглаживающий всю поверхность геоида, либо <strong>референц-эллипсоиды</strong>, ориентированные под конкретные территории и национальные координатные системы. Перенос измерений с физической поверхности Земли на поверхность эллипсоида требует строгого математического контроля, учитывающего аномалии высот и уклонения отвеса, обусловленные различиями между реальным и нормальным гравитационными полями.
+                </p>
+            </div>
+
+            <!-- ЗЕМНОЙ ЭЛЛИПСОИД И ЕГО ПАРАМЕТРЫ -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon blue">
+                        <i data-lucide="globe" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">ЗЕМНОЙ ЭЛЛИПСОИД И ЕГО ПАРАМЕТРЫ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Определение и основные характеристики</p>
+                    </div>
+                </div>
+
+                <div class="info-note blue" style="margin-top: 0;">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <p><strong>Определение.</strong> Земным эллипсоидом называют эллипсоид вращения, форма и размеры которого с той или иной степенью точности соответствуют форме и размерам Земли. Форма и размеры эллипсоида устанавливаются по результатам комплексной обработки астрономо-геодезических, гравиметрических и спутниковых измерений.</p>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-900 mt-6 mb-3">Параметры эллипсоида</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Величины, определяющие размеры и форму эллипсоида, называют параметрами эллипсоида. Основными параметрами земного эллипсоида являются <strong>a</strong> – большая полуось и <strong>b</strong> – малая полуось.
+                </p>
+
+                <figure class="my-6 text-center bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                    <svg viewBox="0 0 400 280" class="w-full max-w-md mx-auto" aria-label="Параметры земного эллипсоида">
+                        <ellipse cx="200" cy="140" rx="160" ry="100" fill="#EFF6FF" stroke="#3166FF" stroke-width="2"/>
+                        <line x1="40" y1="140" x2="360" y2="140" stroke="#94A3B8" stroke-width="1" stroke-dasharray="4,4"/>
+                        <line x1="200" y1="40" x2="200" y2="240" stroke="#94A3B8" stroke-width="1" stroke-dasharray="4,4"/>
+                        <circle cx="200" cy="140" r="3" fill="#3166FF"/>
+                        <text x="205" y="155" font-family="Inter" font-size="12" fill="#3166FF" font-weight="600">O</text>
+                        <line x1="200" y1="140" x2="360" y2="140" stroke="#FF6B31" stroke-width="2.5"/>
+                        <text x="280" y="130" font-family="Times New Roman" font-size="18" fill="#FF6B31" font-weight="bold" font-style="italic">a</text>
+                        <line x1="200" y1="140" x2="200" y2="40" stroke="#FF6B31" stroke-width="2.5"/>
+                        <text x="210" y="95" font-family="Times New Roman" font-size="18" fill="#FF6B31" font-weight="bold" font-style="italic">b</text>
+                        <circle cx="360" cy="140" r="4" fill="#10B981"/>
+                        <text x="365" y="155" font-family="Inter" font-size="11" fill="#10B981" font-weight="600">E</text>
+                        <circle cx="40" cy="140" r="4" fill="#10B981"/>
+                        <text x="25" y="155" font-family="Inter" font-size="11" fill="#10B981" font-weight="600">E₁</text>
+                        <circle cx="200" cy="40" r="4" fill="#8B5CF6"/>
+                        <text x="210" y="35" font-family="Inter" font-size="11" fill="#8B5CF6" font-weight="600">P</text>
+                        <circle cx="200" cy="240" r="4" fill="#8B5CF6"/>
+                        <text x="210" y="255" font-family="Inter" font-size="11" fill="#8B5CF6" font-weight="600">P₁</text>
+                    </svg>
+                    <figcaption class="text-sm text-slate-500 mt-4">Рис. 1 — Параметры земного эллипсоида</figcaption>
+                </figure>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Форма и размеры эллипсоида однозначно определяются двумя независимыми параметрами, один из которых обязательно должен быть линейным. В геодезической практике принято использовать большую полуось и один из следующих производных параметров:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Первое сжатие</div>
+                    <div class="formula-line">α = <span class="frac"><span>a − b</span><span class="bottom">a</span></span></div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Второе сжатие</div>
+                    <div class="formula-line">α′ = <span class="frac"><span>a − b</span><span class="bottom">b</span></span></div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Квадрат первого эксцентриситета</div>
+                    <div class="formula-line">e² = <span class="frac"><span>a² − b²</span><span class="bottom">a²</span></span></div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Квадрат второго эксцентриситета</div>
+                    <div class="formula-line">e′² = <span class="frac"><span>a² − b²</span><span class="bottom">b²</span></span></div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    где <strong>α</strong> – первое сжатие; <strong>α′</strong> – второе сжатие; <strong>e²</strong> – квадрат первого эксцентриситета; <strong>e′²</strong> – квадрат второго эксцентриситета; <strong>a</strong> – большая полуось; <strong>b</strong> – малая полуось.
+                </p>
+
+                <div class="info-note warn">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <p>Выбор конкретного референц-эллипсоида зависит от решаемых геодезических задач, территориального охвата и требуемой точности определений координат.</p>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-900 mt-6 mb-3">Параметры референц-эллипсоидов</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Эллипсоид</th>
+                            <th>Большая полуось a, м</th>
+                            <th>Квадрат эксцентриситета e²</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Красовского</strong></td>
+                            <td>6 378 245,0</td>
+                            <td>0,006 693 420 0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ПЗ-90</strong></td>
+                            <td>6 378 136,0</td>
+                            <td>0,006 694 366 2</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ГСК-2011</strong></td>
+                            <td>6 378 136,5</td>
+                            <td>0,006 694 398 1</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WGS-84</strong></td>
+                            <td>6 378 137,0</td>
+                            <td>0,006 694 380 0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- РАДИУСЫ КРИВИЗНЫ ЭЛЛИПСОИДА -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon orange">
+                        <i data-lucide="maximize-2" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">РАДИУСЫ КРИВИЗНЫ ЭЛЛИПСОИДА</h2>
+                        <p class="text-sm text-slate-500 mt-1">Главные нормальные сечения и их применение</p>
+                    </div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Через любую точку поверхности эллипсоида можно провести бесконечное множество кривых, которые делятся на две группы: <strong>плоские кривые</strong> (полученные при пересечении поверхности плоскостью) и <strong>кривые двоякой кривизны</strong> (например, геодезические линии, за исключением меридианов и экватора).
+                </p>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    В геодезических вычислениях наибольшее практическое значение имеют плоские кривые, которые, в свою очередь, подразделяются на:
+                </p>
+
+                <ul class="feature-list">
+                    <li><strong>Нормальные сечения</strong> – сечение поверхности эллипсоида плоскостью, проходящей через нормаль к поверхности эллипсоида в заданной точке (меридианы, первый вертикал, экватор);</li>
+                    <li><strong>Наклонные сечения</strong> – линии пересечения плоскостью, не содержащей нормаль (геодезические параллели, за исключением экватора).</li>
+                </ul>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Среди бесчисленного множества нормальных сечений в каждой точке поверхности эллипсоида можно выделить два взаимно перпендикулярных направления, обладающих экстремальными значениями радиусов кривизны. Эти направления называются <strong>главными</strong>, а соответствующие радиусы – <strong>главными радиусами кривизны</strong>.
+                </p>
+
+        
+                <h3 class="text-lg font-bold text-slate-900 mt-6 mb-3">Радиус кривизны меридиана</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Меридиан является нормальным сечением, плоскость которого совпадает с плоскостью вращения эллипсоида. Радиус кривизны меридиана в точке с геодезической широтой B определяется по формуле:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Радиус кривизны меридиана</div>
+                    <div class="formula-line">M = <span class="frac"><span>a(1 − e²)</span><span class="bottom">W³</span></span></div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    где <strong>a</strong> – большая полуось эллипсоида; <strong>e²</strong> – квадрат первого эксцентриситета; <strong>W</strong> – первая основная сфероидическая функция широты:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Первая основная сфероидическая функция широты</div>
+                    <div class="formula-line">W = √<span class="sqrt">1 − e² sin² B</span></div>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-900 mt-6 mb-3">Радиус кривизны первого вертикала</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Радиус кривизны первого вертикала – это нормальное сечение, плоскость которого перпендикулярна плоскости меридиана. Его радиус кривизны вычисляется как:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Радиус кривизны первого вертикала</div>
+                    <div class="formula-line">N = <span class="frac"><span>a</span><span class="bottom">W</span></span></div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Геодезическая параллель является наклонным сечением (за исключением экватора). Ее радиус кривизны не зависит от долготы и определяется через радиус первого вертикала по формуле:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Радиус кривизны геодезической параллели</div>
+                    <div class="formula-line">r = N cos B</div>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-900 mt-6 mb-3">Средний радиус кривизны</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Для упрощения решения ряда геодезических задач на территориях ограниченных размеров поверхность эллипсоида заменяют поверхностью сферы. Радиус этой сферы принимается равным среднему интегральному радиусу кривизны R в данной точке. Он вычисляется как среднее геометрическое из главных радиусов кривизны:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Средний радиус кривизны</div>
+                    <div class="formula-line">R = √<span class="sqrt">M · N</span> = <span class="frac"><span>c</span><span class="bottom">V²</span></span></div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    где <strong>c</strong> – полярный радиус кривизны эллипсоида; <strong>V</strong> – вторая основная сфероидическая функция широты:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Вторая основная сфероидическая функция широты</div>
+                    <div class="formula-line">V = √<span class="sqrt">1 + e′² cos² B</span></div>
+                </div>
+
+                <div class="info-note green">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <p>При возрастании геодезической широты от 0° до 90° радиусы нормальных сечений возрастают. На экваторе M₀ = a(1−e²), N₀ = a. На полюсах M₉₀ = N₉₀ = c = a/√(1−e²).</p>
+                </div>
+            </div>
+
+                   
+
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах WGS-84, ГСК-2011, ПЗ-90.11 и Красовского. Точность, скорость и удобство.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.html" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Прямая задача.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="Обратная задача.html" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="Преобразование координат.html" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="Площадь и размеры сфероид. трапеции.HTML" class="hover:text-white transition-colors">Площадь и размеры рамок трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Дипломный проект, СГУГиТ.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleSection(header) {
+            const section = header.closest('.expandable-section');
+            section.classList.toggle('open');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

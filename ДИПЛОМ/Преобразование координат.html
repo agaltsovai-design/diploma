@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конвертер координат | ПЗ-90.11 ↔ ГСК-2011</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/300.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/500.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/700.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/800.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "geo-blue": "#3166FF",
+                        "geo-light": "#EFF6FF",
+                        "geo-orange": "#FF6B31"
+                    },
+                    fontFamily: { inter: ["Inter", "sans-serif"] }
+                }
+            }
+        };
+    </script>
+    <style>
+        :root { --ring: rgba(49, 102, 255, 0.2); --geo-accent: #3166FF; --geo-accent-dark: #2563EB; }
+        body {
+            font-family: "Inter", sans-serif;
+            background: #FDF8F5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            color: #0f172a;
+        }
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #3166FF;
+            border-radius: 9999px;
+        }
+        .nav-link { color: #1E293B; transition: all .2s ease; cursor: pointer; }
+        .nav-link:hover { color: #3166FF; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        .input-field { border: 2px solid #E2E8F0; border-radius: .5rem; padding: .625rem .75rem; text-align: center; font-size: .875rem; transition: all .2s; width: 100%; background: #fff; }
+        .input-field:focus { outline: none; border-color: var(--geo-accent); box-shadow: 0 0 0 4px var(--ring); }
+        .input-field.input-error {
+            border-color: #ef4444;
+            background: #fff5f5;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.14);
+        }
+        .input-field::placeholder {
+            color: #9CA3AF;
+            font-size: 0.75rem;
+        }
+        .btn-primary {
+            background: var(--geo-accent);
+            color: white;
+            border-radius: .65rem;
+            font-weight: 700;
+            transition: all .2s ease;
+            letter-spacing: .01em;
+        }
+        .btn-primary:hover { background: var(--geo-accent-dark); }
+        .format-btn {
+            padding: .7rem 1rem;
+            border-radius: 0;
+            font-size: .875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .15s ease;
+            text-align: center;
+            border-right: 1px solid #d7e2f0;
+            color: #6c7b8f;
+            line-height: 1;
+            flex: 1;
+            min-width: 0;
+        }
+        .format-btn:last-child { border-right: 0; }
+        .format-btn.active {
+            background-color: var(--geo-accent);
+            color: #ffffff;
+            border-color: var(--geo-accent);
+            box-shadow: none;
+            transform: none;
+            animation: none;
+        }
+        .format-btn.inactive { background-color: #fff; color: #7c8189; }
+        .format-btn.inactive:hover { background: #f8fafc; color: #5f666f; transform: none; }
+        .swap-btn { width: 36px; height: 36px; border-radius: 50%; background: #f1f7ff; border: 1px solid #d6e7ff; color: var(--geo-accent); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: .2s; flex-shrink: 0; }
+        .swap-btn:hover { background: #e7f1ff; transform: none; }
+        .center-table th, .center-table td { text-align: center; }
+        .result-row { animation: fadeIn .3s ease-in; }
+        .result-blue { background: linear-gradient(135deg, #2f7cff 0%, #1f6fff 100%); color: white; }
+        .format-toggle {
+            background: rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            padding: .2rem;
+            display: inline-flex;
+            gap: .25rem;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+        }
+        .format-option {
+            flex: 1;
+            padding: .42rem .9rem;
+            border-radius: 999px;
+            font-size: .78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            text-align: center;
+            min-width: 120px;
+        }
+        .format-option.active { background: #ffffff; color: #1d4ed8; box-shadow: 0 1px 3px rgba(2, 6, 23, 0.12); }
+        .format-option.inactive { color: #dbeafe; }
+        .format-option.inactive:hover { background: rgba(255, 255, 255, 0.18); color: #ffffff; }
+        .glass-card { background: #fff; border: 1px solid #edf1f7; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08); }
+        .table-shell {
+            border-radius: .75rem;
+            overflow: hidden;
+            border: 1px solid #dbe7f5;
+            background: #fdfefe;
+            box-shadow: inset 0 0 0 1px rgba(49, 102, 255, 0.03);
+        }
+        .row-number-field {
+            width: 3.5rem !important;
+            min-width: 3.5rem;
+            text-align: center;
+            padding-left: .3rem;
+            padding-right: .3rem;
+            font-variant-numeric: tabular-nums;
+        }
+        #pointsTable tr:nth-child(even) { background: #fcfdff; }
+        #resultsSection {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 18px 40px rgba(30, 64, 175, 0.24);
+        }
+        .soft-btn { border-radius: .65rem; transition: all .2s ease; }
+        .soft-btn:hover { background: #f8fbff; }
+        .btn-theory-mini {
+            background: #FF6B31;
+            color: #fff;
+            border-radius: .75rem;
+            font-weight: 700;
+            padding: .7rem 1rem;
+            font-size: .875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            white-space: nowrap;
+            transition: .2s ease;
+        }
+        .btn-theory-mini:hover { background: #EA580C; }
+        .hero-title { letter-spacing: .01em; }
+        .section-title { font-size: 1.85rem; font-weight: 800; line-height: 1.2; }
+        .top-link { font-size: .78rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; opacity: .9; }
+        .validation-hint {
+            display: none;
+            margin-top: .65rem;
+            font-size: .82rem;
+            color: #dc2626;
+            font-weight: 600;
+        }
+        .validation-hint.visible { display: block; }
+        .system-label {
+            font-size: .7rem;
+            line-height: 1;
+            color: #7b8798;
+            margin-bottom: .45rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-weight: 700;
+            text-align: left;
+        }
+        @keyframes dropdownOpen {
+            0% { opacity: 0; transform: translateY(-8px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes dropdownClose {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-8px) scale(0.98); }
+        }
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select-trigger {
+            position: relative;
+            width: 100%;
+            background: #FFFFFF;
+            border: 2px solid #E2E8F0;
+            border-radius: 0.75rem;
+            padding: 0.75rem 2.75rem 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1E293B;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            transition: all 0.25s ease;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .custom-select-trigger:hover {
+            border-color: #93C5FD;
+            background: #F8FAFC;
+        }
+        .custom-select-trigger.open {
+            border-color: #3166FF;
+            box-shadow: 0 0 0 3px rgba(49, 102, 255, 0.15);
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .custom-select-trigger .trigger-chevron {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.3s ease;
+            color: #94A3B8;
+            flex-shrink: 0;
+        }
+        .custom-select-trigger.open .trigger-chevron {
+            transform: translateY(-50%) rotate(180deg);
+            color: #3166FF;
+        }
+        .custom-select-trigger .selected-text {
+            flex: 1;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .custom-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #FFFFFF;
+            border: 2px solid #3166FF;
+            border-top: 1px solid #E2E8F0;
+            border-radius: 0 0 0.75rem 0.75rem;
+            z-index: 100;
+            overflow: hidden;
+            box-shadow: 0 12px 32px rgba(49, 102, 255, 0.2);
+            animation: dropdownOpen 0.2s ease;
+        }
+        .custom-select-option {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.15s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #475569;
+        }
+        .custom-select-option:hover {
+            background: #EFF6FF;
+            color: #1E40AF;
+        }
+        .custom-select-option.selected {
+            background: #3166FF;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+        .custom-select-option.selected:hover {
+            background: #2563EB;
+        }
+        .custom-select-option .option-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .custom-select-option + .custom-select-option {
+            border-top: 1px solid #F1F5F9;
+        }
+        .custom-select-option.selected + .custom-select-option {
+            border-top-color: #1D4ED8;
+        }
+        .formats-pill {
+            border: 1px solid #d7e2f0;
+            border-radius: 999px;
+            overflow: hidden;
+            background: #fff;
+            display: flex;
+        }
+        .formats-pill .format-btn:first-child { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+        .formats-pill .format-btn:last-child { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
+        @keyframes pulse { 0%,100% { transform: scale(1);} 50% { transform: scale(1.05);} }
+        .logo-home { text-decoration: none; }
+        .logo-text { font-weight: 800; font-size: 1.5rem; letter-spacing: -0.02em; }
+        .logo-geo { color: #FF6B31; }
+        .logo-point { color: #3166FF; }
+        @media (max-width: 900px) {
+            .custom-select-trigger { font-size: 1rem; padding-top: 0.85rem; padding-bottom: 0.85rem; }
+            .system-label { font-size: .72rem; }
+            .format-btn { font-size: .85rem; padding: .58rem .7rem; }
+            .format-option { min-width: 100px; }
+            .section-title { font-size: 1.45rem; }
+            .hero-title + p { font-size: .95rem; }
+            .table-shell { -webkit-overflow-scrolling: touch; }
+            .btn-theory-mini { width: 100%; justify-content: center; }
+        }
+        @media (max-width: 640px) {
+            main.pt-32 { padding-top: 7rem; }
+            .glass-card { padding: 1rem; }
+            .grid.grid-cols-2 { grid-template-columns: 1fr; }
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: inherit;
+            opacity: 0.85;
+            transition: opacity 0.25s ease, gap 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            position: relative;
+        }
+        .back-link:hover {
+            opacity: 1;
+            gap: 12px;
+        }
+        .back-link .back-icon {
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .back-link:hover .back-icon {
+            transform: translateX(-3px);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <header class="fixed w-full top-0 z-50 pt-4 px-4" id="site-header">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-4 sm:px-8 py-3 sm:py-4 flex justify-between items-center shadow-lg gap-2">
+                <div class="flex items-center gap-1 min-w-0">
+                    <a href="index.html.html" class="logo-home logo-text">
+                        <span class="logo-geo">GEO</span><span class="logo-point">POINT</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="Главная страница.html" class="nav-link text-base font-semibold">Главная</a>
+                    <a href="Главная страница.html#calculators" class="nav-link nav-link-active text-base font-semibold">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link text-base font-semibold">Теория</a>
+                    <a href="О проекте.HTML" class="nav-link text-base font-semibold">О проекте</a>
+                    <a href="Справка.html" class="nav-link text-base font-semibold">Справка</a>
+                </div>
+                <button type="button" class="md:hidden text-geo-blue shrink-0" id="mobileMenuBtn" aria-label="Открыть меню">
+                    <i data-lucide="menu" class="w-7 h-7"></i>
+                </button>
+            </nav>
+        </div>
+        <div class="md:hidden hidden bg-white rounded-2xl mt-2 mx-4 p-4 shadow-lg border border-geo-blue/30" id="mobileMenu">
+            <div class="flex flex-col space-y-3">
+                <a href="Главная страница.html" class="nav-link text-base font-semibold py-2">Главная</a>
+                <a href="Главная страница.html#calculators" class="nav-link text-base font-semibold py-2 nav-link-active">Калькуляторы</a>
+                <a href="Теория.html" class="nav-link text-base font-semibold py-2">Теория</a>
+                <a href="О проекте.HTML" class="nav-link text-base font-semibold py-2">О проекте</a>
+                <a href="Справка.html" class="nav-link text-base font-semibold py-2">Справка</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-4">
+    <div class="max-w-6xl mx-auto pt-0 pb-6">
+        <div class="bg-geo-blue rounded-3xl p-8 mb-8 text-white shadow-lg">
+            <a href="Главная страница.html" class="back-link mb-6"><i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i> НАЗАД НА ГЛАВНУЮ</a>
+            <h1 class="hero-title section-title mb-3">ПРЕОБРАЗОВАНИЕ КООРДИНАТ</h1>
+            <p class="text-blue-100 text-[1.05rem] max-w-6xl">Перевод координат между геодезической (B, L, H), пространственной прямоугольной (X, Y, Z) и плоской прямоугольной (x, y) системами с выбором эллипсоида.</p>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto pb-6">
+        <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+            <div class="flex items-start justify-between gap-3 mb-6">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-blue-50 text-geo-blue flex items-center justify-center border border-blue-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold leading-none text-slate-900">ИСХОДНЫЕ ДАННЫЕ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Выберите системы координат и тип координат</p>
+                    </div>
+                </div>
+                <a href="Теория_Системы координат.html" class="btn-theory-mini">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.5v12m0-12C10.6 5.7 9.1 5.3 7.5 5.3A4.5 4.5 0 003 9.8V18a3 3 0 013-3h6m0-8.5c1.4-.8 2.9-1.2 4.5-1.2A4.5 4.5 0 0121 9.8V18a3 3 0 00-3-3h-6"/></svg>
+                    Изучить теорию
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center mb-8">
+                <div class="space-y-3">
+                    <label class="system-label block">Исходная СК</label>
+                    <input type="hidden" id="sourceSystem" value="pz90">
+                    <div id="sourceSystemSelector" class="custom-select-wrapper"></div>
+                    <div class="formats-pill mt-3">
+                        <div onclick="setFormat('source', 'XYZ')" id="source-xyz" class="format-btn active">XYZ</div>
+                        <div onclick="setFormat('source', 'BLH')" id="source-blh" class="format-btn inactive">BLH</div>
+                        <div onclick="setFormat('source', 'xyh')" id="source-xyh" class="format-btn inactive">xyh</div>
+                    </div>
+                </div>
+
+                <div class="flex justify-center pt-6">
+                    <button onclick="swapSystems()" class="swap-btn" title="Поменять местами">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    </button>
+                </div>
+
+                <div class="space-y-3">
+                    <label class="system-label block">Требуемая СК</label>
+                    <input type="hidden" id="targetSystem" value="gsk2011">
+                    <div id="targetSystemSelector" class="custom-select-wrapper"></div>
+                    <div class="formats-pill mt-3">
+                        <div onclick="setFormat('target', 'XYZ')" id="target-xyz" class="format-btn active">XYZ</div>
+                        <div onclick="setFormat('target', 'BLH')" id="target-blh" class="format-btn inactive">BLH</div>
+                        <div onclick="setFormat('target', 'xyh')" id="target-xyh" class="format-btn inactive">xyh</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Номер зоны (для режима xyh)</label>
+                <input id="gaussZone" type="number" class="input-field max-w-xs mx-auto" min="1" max="60" value="" placeholder="например, 37" />
+                <div id="validationHint" class="validation-hint" data-default="Некорректные данные: проверьте значения в таблице."></div>
+            </div>
+
+            <div class="table-shell overflow-x-auto">
+                <table class="w-full center-table bg-white">
+                    <thead class="bg-[#fbfcfe] text-[#778396] text-xs uppercase font-semibold">
+                        <tr>
+                            <th class="px-4 py-3 w-16">№</th>
+                            <th class="px-4 py-3" id="col1Label">X (м)</th>
+                            <th class="px-4 py-3" id="col2Label">Y (м)</th>
+                            <th class="px-4 py-3" id="col3Label">Z (м)</th>
+                            <th class="px-4 py-3 w-16"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="pointsTable" class="divide-y divide-gray-100">
+                        <tr class="hover:bg-gray-50 transition-colors result-row">
+                            <td class="px-4 py-3"><input type="text" value="1" class="input-field row-number-field bg-gray-50" readonly></td>
+                            <td class="px-4 py-3"><input type="text" value="" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)" placeholder="0.000"></td>
+                            <td class="px-4 py-3"><input type="text" value="" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)" placeholder="0.000"></td>
+                            <td class="px-4 py-3"><input type="text" value="" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)" placeholder="0.000"></td>
+                            <td class="px-4 py-3"><button onclick="deleteRow(this)" class="text-gray-400 hover:text-red-500 transition-colors">✕</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 space-y-3">
+                <button onclick="addRow()" class="soft-btn w-full py-3 border-2 border-dashed border-[#d9e3f0] text-[#5f6f84] rounded-xl font-semibold transition-all">＋ Добавить точку</button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="document.getElementById('fileInput').click()" class="soft-btn py-3 bg-blue-50 border border-blue-300 text-blue-700 rounded-xl font-semibold transition-all inline-flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        Импортировать
+                    </button>
+                    <input type="file" id="fileInput" accept=".txt,.csv" onchange="handleFileImport(event)" class="hidden">
+                    <button onclick="resetForm()" class="soft-btn py-3 bg-white border border-[#e1e8f2] text-slate-600 rounded-xl font-semibold transition-all inline-flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5l14 14M19 5L5 19"/></svg>
+                        Сброс
+                    </button>
+                </div>
+                <button onclick="calculate()" class="w-full btn-primary py-4 text-lg shadow-md hover:shadow-lg">Преобразовать</button>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="result-blue rounded-3xl p-6 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-start gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white leading-tight">РЕЗУЛЬТАТ РАСЧЁТА</h2>
+                        <p id="resultSubtitle" class="text-blue-100 text-sm"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadResultsTxt()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium">Скачать</button>
+                    <button onclick="copyResults()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium">Копировать</button>
+                </div>
+            </div>
+            <div id="resultGeodeticFormatToggle" class="mb-4 hidden">
+                <label class="block text-xs font-semibold text-blue-100 uppercase tracking-wide mb-2">Формат вывода геодезических координат</label>
+                <div class="format-toggle max-w-md bg-white/15">
+                    <div onclick="setGeodeticFormat('dms')" id="geo-dms" class="format-option active">ГМС</div>
+                    <div onclick="setGeodeticFormat('decimal')" id="geo-decimal" class="format-option inactive">Доли градуса</div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full center-table">
+                    <thead>
+                        <tr class="border-b border-white/20">
+                            <th class="px-4 py-3 w-16 text-sm text-blue-100">№</th>
+                            <th class="px-4 py-3 text-sm text-blue-100" id="resCol1">X (м)</th>
+                            <th class="px-4 py-3 text-sm text-blue-100" id="resCol2">Y (м)</th>
+                            <th class="px-4 py-3 text-sm text-blue-100" id="resCol3">Z (м)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTable" class="divide-y divide-white/10"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white pt-20 pb-10" id="site-footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html.html" class="logo-home inline-block">
+                        <span class="logo-text text-2xl">
+                            <span class="logo-geo">GEO</span><span class="logo-point">POINT</span>
+                        </span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах WGS-84, ГСК-2011, ПЗ-90.11 и Красовского. Точность, скорость и удобство.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.HTML" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Прямая задача.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="Обратная задача.html" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="Площадь и размеры сфероид. трапеции.html" class="hover:text-white transition-colors">Площадь и размеры рамок сфероидической трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Все права защищены.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const transformationParams = {
+            pz90_gsk2011: { x: 0.000, y: -0.014, z: 0.008, wx: 0.000562, wy: 0.000019, wz: -0.000053, dm: 0.0006 },
+            pz90_sk42: { x: -23.557, y: 140.844, z: 79.778, wx: 0.00230, wy: 0.34646, wz: 0.79421, dm: 0.228 },
+            pz90_sk95: { x: -24.457, y: 130.784, z: 81.538, wx: 0.00230, wy: -0.00354, wz: 0.13421, dm: 0.228 },
+            pz90_pz9002: { x: 0.373, y: -0.186, z: -0.202, wx: 0.00230, wy: -0.00354, wz: 0.00421, dm: 0.0080 },
+            pz90_wgs84: { x: 0.013, y: -0.106, z: -0.022, wx: 0.00230, wy: -0.00354, wz: 0.00421, dm: 0.008 },
+            pz90_itrf2008: { x: -0.003, y: -0.001, z: 0.000, wx: 0.000019, wy: -0.000042, wz: 0.000002, dm: 0.000 }
+        };
+        const rho = 206264.8062;
+        const GEO_DEG_PREC = 5;
+        const ellipsoids = {
+            pz90: { a: 6378136.0, e2: 0.00669436619 },
+            gsk2011: { a: 6378136.5, e2: 0.00669439811 },
+            sk42: { a: 6378245.0, e2: 0.00669342162 },
+            sk95: { a: 6378245.0, e2: 0.00669342162 },
+            wgs84: { a: 6378137.0, e2: 0.00669437999014 }
+        };
+
+        const COORD_SYSTEMS = {
+            sk42: "СК-42",
+            sk95: "СК-95",
+            pz90: "ПЗ-90.11",
+            gsk2011: "ГСК-2011",
+            wgs84: "WGS-84"
+        };
+        const SYSTEM_ORDER = ["sk42", "sk95", "pz90", "gsk2011", "wgs84"];
+        const systemDropdownOpen = { source: false, target: false };
+
+        function getSystemDisplayName(key) {
+            return COORD_SYSTEMS[key] || String(key).toUpperCase();
+        }
+
+        function buildSystemSelect(role, selectedKey) {
+            const containerId = role === "source" ? "sourceSystemSelector" : "targetSystemSelector";
+            const container = document.getElementById(containerId);
+            const hiddenInput = document.getElementById(role === "source" ? "sourceSystem" : "targetSystem");
+            if (!container || !hiddenInput) return;
+
+            const triggerId = role + "SelectTrigger";
+            const dropdownId = role + "SelectDropdown";
+            const isOpen = systemDropdownOpen[role];
+
+            let html = `<div class="custom-select-trigger${isOpen ? " open" : ""}" id="${triggerId}" onclick="toggleSystemDropdown('${role}')">`;
+            html += `<span class="selected-text">${getSystemDisplayName(selectedKey)}</span>`;
+            html += '<svg class="trigger-chevron w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></div>';
+            html += `<div class="custom-select-dropdown" id="${dropdownId}" style="display:${isOpen ? "block" : "none"};">`;
+            SYSTEM_ORDER.forEach(function (key) {
+                const selected = key === selectedKey ? " selected" : "";
+                html += `<div class="custom-select-option${selected}" data-key="${key}" onclick="selectSystem('${role}', '${key}')">`;
+                html += `<span class="option-text">${getSystemDisplayName(key)}</span></div>`;
+            });
+            html += "</div>";
+            container.innerHTML = html;
+            hiddenInput.value = selectedKey;
+        }
+
+        function closeSystemDropdown(role) {
+            if (role) {
+                systemDropdownOpen[role] = false;
+                const trigger = document.getElementById(role + "SelectTrigger");
+                const dropdown = document.getElementById(role + "SelectDropdown");
+                if (trigger) trigger.classList.remove("open");
+                if (dropdown) dropdown.style.display = "none";
+                return;
+            }
+            ["source", "target"].forEach(closeSystemDropdown);
+        }
+
+        function toggleSystemDropdown(role) {
+            const willOpen = !systemDropdownOpen[role];
+            closeSystemDropdown();
+            systemDropdownOpen[role] = willOpen;
+            const trigger = document.getElementById(role + "SelectTrigger");
+            const dropdown = document.getElementById(role + "SelectDropdown");
+            if (trigger) trigger.classList.toggle("open", willOpen);
+            if (dropdown) dropdown.style.display = willOpen ? "block" : "none";
+        }
+
+        function selectSystem(role, key) {
+            if (!COORD_SYSTEMS[key]) return;
+            systemDropdownOpen[role] = false;
+            buildSystemSelect(role, key);
+            if (role === "target") updateResultLabels();
+            closeSystemDropdown();
+        }
+
+        document.addEventListener("click", function (e) {
+            ["source", "target"].forEach(function (role) {
+                const wrapper = document.getElementById(role === "source" ? "sourceSystemSelector" : "targetSystemSelector");
+                if (wrapper && !wrapper.contains(e.target) && systemDropdownOpen[role]) {
+                    closeSystemDropdown(role);
+                }
+            });
+        });
+
+        let sourceFormat = "XYZ";
+        let targetFormat = "XYZ";
+        let geodeticFormat = "dms";
+
+        function setFormat(system, format) {
+            if (system === "source") sourceFormat = format; else targetFormat = format;
+            updateLabels("source", sourceFormat);
+            updateResultLabels();
+            updateInputPlaceholders();
+            ["xyz", "blh", "xyh"].forEach(f => {
+                const btn = document.getElementById(`${system}-${f}`);
+                const active = f === format.toLowerCase();
+                btn.classList.toggle("active", active);
+                btn.classList.toggle("inactive", !active);
+            });
+            document.getElementById("resultGeodeticFormatToggle").classList.toggle("hidden", targetFormat !== "BLH");
+        }
+
+        function setGeodeticFormat(format) {
+            geodeticFormat = format;
+            ["dms", "decimal"].forEach(f => {
+                const btn = document.getElementById(`geo-${f}`);
+                btn.classList.toggle("active", f === format);
+                btn.classList.toggle("inactive", f !== format);
+            });
+            if (!document.getElementById("resultsSection").classList.contains("hidden")) {
+                calculate();
+            }
+        }
+
+        function updateLabels(system, format) {
+            const col1 = document.getElementById(system === "source" ? "col1Label" : "resCol1");
+            const col2 = document.getElementById(system === "source" ? "col2Label" : "resCol2");
+            const col3 = document.getElementById(system === "source" ? "col3Label" : "resCol3");
+            if (format === "XYZ") { col1.textContent = "X (м)"; col2.textContent = "Y (м)"; col3.textContent = "Z (м)"; }
+            else if (format === "BLH") { col1.textContent = "B (широта)"; col2.textContent = "L (долгота)"; col3.textContent = "H (м)"; }
+            else { col1.textContent = "x (м)"; col2.textContent = "y (м)"; col3.textContent = "h (м)"; }
+        }
+
+        function updateResultLabels() {
+            updateLabels("target", targetFormat);
+            const targetSys = getSystemDisplayName(document.getElementById("targetSystem").value);
+            const subtitle = document.getElementById("resultSubtitle");
+            if (targetFormat === "XYZ") subtitle.textContent = `Пространственные прямоугольные координаты (${targetSys})`;
+            else if (targetFormat === "BLH") subtitle.textContent = `Геодезические координаты (${targetSys})`;
+            else subtitle.textContent = `Плоские прямоугольные координаты Гаусса-Крюгера (${targetSys})`;
+        }
+
+        function updateInputPlaceholders() {
+            const inputs = document.querySelectorAll(".coordinate-input");
+            let placeholder1, placeholder2, placeholder3;
+            
+            if (sourceFormat === "BLH") {
+                placeholder1 = "54°42′58,9935″ или 54,71639";
+                placeholder2 = "85°02′34,2673″ или 85,04390";
+                placeholder3 = "434,057";
+            } else if (sourceFormat === "xyh") {
+                placeholder1 = "6067523,274";
+                placeholder2 = "15373878,184";
+                placeholder3 = "434,057";
+            } else {
+                placeholder1 = "20671.090";
+                placeholder2 = "3411499.648";
+                placeholder3 = "5371396.352";
+            }
+            
+            inputs.forEach((input, index) => {
+                if (index === 0) input.placeholder = placeholder1;
+                else if (index === 1) input.placeholder = placeholder2;
+                else if (index === 2) input.placeholder = placeholder3;
+            });
+        }
+
+        function swapSystems() {
+            const sourceInput = document.getElementById("sourceSystem");
+            const targetInput = document.getElementById("targetSystem");
+            const sourceKey = sourceInput.value;
+            const targetKey = targetInput.value;
+            sourceInput.value = targetKey;
+            targetInput.value = sourceKey;
+            buildSystemSelect("source", targetKey);
+            buildSystemSelect("target", sourceKey);
+            [sourceFormat, targetFormat] = [targetFormat, sourceFormat];
+            setFormat("source", sourceFormat);
+            setFormat("target", targetFormat);
+        }
+
+        function parseCoordinate(input) {
+            input.value = normalizeNumericString(input.value);
+            input.classList.remove("input-error");
+            hideValidationHint();
+        }
+
+        function normalizeNumericString(raw) {
+            if (!raw) return "";
+            let s = raw.trim();
+            s = s.replace(/\s+/g, "");
+            const commaCount = (s.match(/,/g) || []).length;
+            const dotCount = (s.match(/\./g) || []).length;
+            if (commaCount > 1 && dotCount === 0) s = s.replace(/,/g, "");
+            else if (commaCount === 1 && dotCount === 0) s = s.replace(",", ".");
+            else if (commaCount > 0 && dotCount > 0) s = s.replace(/,/g, "");
+            return s;
+        }
+
+        function parseNumber(value) {
+            const n = parseFloat(normalizeNumericString(value));
+            return Number.isFinite(n) ? n : NaN;
+        }
+
+        function markInputError(input) {
+            if (!input) return;
+            input.classList.add("input-error");
+        }
+
+        function clearInputErrors() {
+            document.querySelectorAll(".input-field.input-error").forEach(el => el.classList.remove("input-error"));
+        }
+
+        const VALIDATION_MESSAGES = {
+            formatMismatch: "Некорректные данные: формат координат не соответствует выбранному типу (XYZ, BLH или xyh).",
+            rectangularInBlh: "Введены прямоугольные координаты при формате BLH. Укажите широту и долготу в долях градуса или ГМС, высоту — в метрах.",
+            latitudeRange: "Широта (B) выходит за допустимый предел: от −90° до +90°.",
+            longitudeRange: "Долгота (L) выходит за допустимый предел: от −180° до +180°.",
+            latitudeParse: "Широта (B): введите доли градуса (например, 54,71639) или ГМС (например, 54°42′58,9935″).",
+            longitudeParse: "Долгота (L): введите доли градуса (например, 85,04390) или ГМС (например, 85°02′34,2673″).",
+            heightInvalid: "Высота (H): введите числовое значение в метрах."
+        };
+
+        function showValidationHint(message) {
+            const el = document.getElementById("validationHint");
+            const fallback = el.dataset.default || VALIDATION_MESSAGES.formatMismatch;
+            el.textContent = message || fallback;
+            el.classList.add("visible");
+        }
+
+        function hideValidationHint() {
+            const el = document.getElementById("validationHint");
+            el.classList.remove("visible");
+            el.textContent = el.dataset.default || VALIDATION_MESSAGES.formatMismatch;
+        }
+
+        function looksLikeDMS(value) {
+            if (!value) return false;
+            const s = String(value).trim();
+            return /[°º˚]/.test(s) || /[''′]/.test(s) || /[""″]/.test(s) ||
+                /^\s*[+-]?\d+\s+\d+(\s+\d+([.,]\d+)?)?\s*$/.test(s);
+        }
+
+        function looksLikeGeodeticAngle(value) {
+            if (!value || looksLikeDMS(value)) return true;
+            const s = normalizeNumericString(value);
+            if (!/^[+-]?\d+([.,]\d+)?$/.test(s)) return false;
+            const n = parseFloat(s.replace(",", "."));
+            return Number.isFinite(n) && Math.abs(n) <= 180;
+        }
+
+        function looksLikeRectangularCoord(value) {
+            if (!value || looksLikeDMS(value)) return false;
+            const n = parseNumber(value);
+            return Number.isFinite(n) && Math.abs(n) >= 1000;
+        }
+
+        function isPlainMetricNumber(value) {
+            if (!value || looksLikeDMS(value)) return false;
+            return Number.isFinite(parseNumber(value));
+        }
+
+        function parseGeodeticAngle(value) {
+            if (!value) return { ok: false, reason: "empty" };
+            if (looksLikeRectangularCoord(value)) return { ok: false, reason: "rectangular" };
+            const deg = parseDMS(value);
+            if (!Number.isFinite(deg)) return { ok: false, reason: "parse" };
+            return { ok: true, deg };
+        }
+
+        function checkGeodeticAngle(value, isLatitude) {
+            const parsed = parseGeodeticAngle(value);
+            if (!parsed.ok) return parsed;
+            const limit = isLatitude ? 90 : 180;
+            if (Math.abs(parsed.deg) > limit) {
+                return {
+                    ok: false,
+                    reason: "range",
+                    message: isLatitude ? VALIDATION_MESSAGES.latitudeRange : VALIDATION_MESSAGES.longitudeRange
+                };
+            }
+            return { ok: true, deg: parsed.deg };
+        }
+
+        function validateRowForFormat(raw1, raw2, raw3, format) {
+            const allFields = { ok: false, e1: true, e2: true, e3: true, allFields: true, message: VALIDATION_MESSAGES.rectangularInBlh };
+            if (format === "BLH") {
+                if (looksLikeRectangularCoord(raw1) || looksLikeRectangularCoord(raw2) || looksLikeRectangularCoord(raw3)) {
+                    return allFields;
+                }
+
+                const bCheck = checkGeodeticAngle(raw1, true);
+                const lCheck = checkGeodeticAngle(raw2, false);
+                const h = parseNumber(raw3);
+                const hOk = isPlainMetricNumber(raw3) && Number.isFinite(h) && Math.abs(h) < 50000 && !looksLikeRectangularCoord(raw3);
+
+                const result = { ok: true, e1: false, e2: false, e3: false, allFields: false, message: null };
+                const messages = [];
+
+                if (!bCheck.ok) {
+                    result.ok = false;
+                    result.e1 = true;
+                    if (bCheck.reason === "rectangular") return allFields;
+                    if (bCheck.reason === "range") messages.push(bCheck.message);
+                    else if (bCheck.reason === "parse") messages.push(VALIDATION_MESSAGES.latitudeParse);
+                }
+                if (!lCheck.ok) {
+                    result.ok = false;
+                    result.e2 = true;
+                    if (lCheck.reason === "rectangular") return allFields;
+                    if (lCheck.reason === "range") messages.push(lCheck.message);
+                    else if (lCheck.reason === "parse") messages.push(VALIDATION_MESSAGES.longitudeParse);
+                }
+                if (!hOk) {
+                    result.ok = false;
+                    result.e3 = true;
+                    messages.push(VALIDATION_MESSAGES.heightInvalid);
+                }
+                if (messages.length) result.message = messages.join(" ");
+                return result;
+            }
+            const e1 = !isPlainMetricNumber(raw1) || looksLikeGeodeticAngle(raw1) || looksLikeDMS(raw1);
+            const e2 = !isPlainMetricNumber(raw2) || looksLikeGeodeticAngle(raw2) || looksLikeDMS(raw2);
+            const e3 = !isPlainMetricNumber(raw3) || looksLikeDMS(raw3);
+            if (format === "xyh") {
+                const x = parseNumber(raw1);
+                const y = parseNumber(raw2);
+                if (Number.isFinite(x) && Number.isFinite(y) && Math.abs(x) < 100000 && Math.abs(y) < 1000000) {
+                    return allFields;
+                }
+            }
+            if (format === "XYZ") {
+                const vals = [parseNumber(raw1), parseNumber(raw2), parseNumber(raw3)].filter(Number.isFinite);
+                if (vals.length === 3 && vals.every(v => Math.abs(v) <= 360)) {
+                    return allFields;
+                }
+            }
+            if (e1 || e2 || e3) {
+                return { ok: false, e1, e2, e3, allFields: e1 && e2 && e3 };
+            }
+            return { ok: true, e1: false, e2: false, e3: false, allFields: false };
+        }
+
+        function parseDMS(value) {
+            if (!value) return NaN;
+            let s = String(value).trim().replace(/\s+/g, " ");
+            s = s.replace(/,/g, ".");
+
+            if (/^[+-]?\d+(\.\d+)?$/.test(s)) {
+                return parseFloat(s);
+            }
+
+            const dmsRegex = /^([+-]?\d+)\s*[°º˚]?\s*(\d+)?\s*[''′]?\s*(\d+(?:\.\d+)?)?\s*[""″]?\s*$/i;
+            let m = s.match(dmsRegex);
+            if (m) {
+                const sign = m[1].startsWith("-") ? -1 : 1;
+                const deg = Math.abs(parseFloat(m[1]));
+                const min = m[2] ? parseFloat(m[2]) : 0;
+                const sec = m[3] ? parseFloat(m[3]) : 0;
+                return sign * (deg + min / 60 + sec / 3600);
+            }
+
+            const spacedRegex = /^([+-]?\d+)\s+(\d+)(?:\s+(\d+(?:\.\d+)?))?\s*$/;
+            m = s.match(spacedRegex);
+            if (m) {
+                const sign = m[1].startsWith("-") ? -1 : 1;
+                const deg = Math.abs(parseFloat(m[1]));
+                const min = parseFloat(m[2]);
+                const sec = m[3] ? parseFloat(m[3]) : 0;
+                return sign * (deg + min / 60 + sec / 3600);
+            }
+
+            const compactRegex = /^([+-]?\d+)[°º˚]\s*(\d+)[''′]\s*(\d+(?:\.\d+)?)[""″]?$/i;
+            m = s.match(compactRegex);
+            if (m) {
+                const sign = m[1].startsWith("-") ? -1 : 1;
+                const deg = Math.abs(parseFloat(m[1]));
+                const min = parseFloat(m[2]);
+                const sec = parseFloat(m[3]);
+                return sign * (deg + min / 60 + sec / 3600);
+            }
+
+            return NaN;
+        }
+
+        function addRow() {
+            const tbody = document.getElementById("pointsTable");
+            const rowCount = tbody.rows.length + 1;
+            const row = document.createElement("tr");
+            row.className = "hover:bg-gray-50 transition-colors result-row";
+            
+            const placeholders = getInputPlaceholders();
+            
+            row.innerHTML = `<td class="px-4 py-3"><input type="text" value="${rowCount}" class="input-field row-number-field bg-gray-50" readonly></td>
+                             <td class="px-4 py-3"><input type="text" placeholder="${placeholders[0]}" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)"></td>
+                             <td class="px-4 py-3"><input type="text" placeholder="${placeholders[1]}" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)"></td>
+                             <td class="px-4 py-3"><input type="text" placeholder="${placeholders[2]}" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)"></td>
+                             <td class="px-4 py-3"><button onclick="deleteRow(this)" class="text-gray-400 hover:text-red-500 transition-colors">✕</button></td>`;
+            tbody.appendChild(row);
+        }
+
+        function getInputPlaceholders() {
+            if (sourceFormat === "BLH") {
+                return ["54°42′58,9935″ или 54,71639", "85°02′34,2673″ или 85,04390", "434,057"];
+            } else if (sourceFormat === "xyh") {
+                return ["6067523,274", "15373878,184", "434,057"];
+            } else {
+                return ["20671.090", "3411499.648", "5371396.352"];
+            }
+        }
+
+        function deleteRow(btn) {
+            const row = btn.closest("tr");
+            row.remove();
+            Array.from(document.getElementById("pointsTable").rows).forEach((r, i) => { r.cells[0].querySelector("input").value = i + 1; });
+        }
+
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const lines = String(e.target.result).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                const tbody = document.getElementById("pointsTable");
+                tbody.innerHTML = "";
+                let rowCount = 0;
+                lines.forEach(line => {
+                    const parts = line.split(/[;\t ]+/).map(p => p.trim()).filter(Boolean);
+                    if (parts.length < 3) return;
+                    const values = parts.length >= 4 ? [parts[1], parts[2], parts[3]] : [parts[0], parts[1], parts[2]];
+                    rowCount += 1;
+                    const row = document.createElement("tr");
+                    row.className = "hover:bg-gray-50 transition-colors result-row";
+                    row.innerHTML = `<td class="px-4 py-3"><input type="text" value="${rowCount}" class="input-field row-number-field bg-gray-50" readonly></td>
+                                     <td class="px-4 py-3"><input type="text" value="${values[0]}" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)"></td>
+                                     <td class="px-4 py-3"><input type="text" value="${values[1]}" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)"></td>
+                                     <td class="px-4 py-3"><input type="text" value="${values[2]}" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)"></td>
+                                     <td class="px-4 py-3"><button onclick="deleteRow(this)" class="text-gray-400 hover:text-red-500 transition-colors">✕</button></td>`;
+                    tbody.appendChild(row);
+                });
+                if (rowCount === 0) alert("Не удалось распознать данные. Используйте разделители: ;, табуляцию или пробел.");
+                event.target.value = "";
+            };
+            reader.readAsText(file);
+        }
+
+        function resetForm() {
+            const placeholders = getInputPlaceholders();
+            document.getElementById("pointsTable").innerHTML = `<tr class="hover:bg-gray-50 transition-colors result-row">
+                <td class="px-4 py-3"><input type="text" value="1" class="input-field row-number-field bg-gray-50" readonly></td>
+                <td class="px-4 py-3"><input type="text" placeholder="${placeholders[0]}" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)"></td>
+                <td class="px-4 py-3"><input type="text" placeholder="${placeholders[1]}" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)"></td>
+                <td class="px-4 py-3"><input type="text" placeholder="${placeholders[2]}" class="input-field coordinate-input" oninput="parseCoordinate(this)" onchange="parseCoordinate(this)"></td>
+                <td class="px-4 py-3"><button onclick="deleteRow(this)" class="text-gray-400 hover:text-red-500 transition-colors">✕</button></td>
+            </tr>`;
+            document.getElementById("resultsSection").classList.add("hidden");
+        }
+
+        function getTransformParams(sourceSys, targetSys) {
+            const direct = transformationParams[`${sourceSys}_${targetSys}`];
+            if (direct) return direct;
+            const reverse = transformationParams[`${targetSys}_${sourceSys}`];
+            if (!reverse) return null;
+            return { x: -reverse.x, y: -reverse.y, z: -reverse.z, wx: -reverse.wx, wy: -reverse.wy, wz: -reverse.wz, dm: -reverse.dm };
+        }
+
+        function applyHelmert(X, Y, Z, params) {
+            const dm = params.dm * 1e-6;
+            return {
+                // Знаки соответствуют формулам из приложения (Афонин, прил. 4/5).
+                X: X + params.x + dm * X + (params.wz / rho) * Y - (params.wy / rho) * Z,
+                Y: Y + params.y + dm * Y - (params.wz / rho) * X + (params.wx / rho) * Z,
+                Z: Z + params.z + dm * Z + (params.wy / rho) * X - (params.wx / rho) * Y
+            };
+        }
+
+        function inputToSourceXYZ(v1, v2, v3, sourceSys) {
+            if (sourceFormat === "XYZ") {
+                return { X: parseNumber(v1), Y: parseNumber(v2), Z: parseNumber(v3) };
+            }
+            if (sourceFormat === "BLH") {
+                const B = parseDMS(v1);
+                const L = parseDMS(v2);
+                const H = parseNumber(v3);
+                return geodeticToCartesian(B, L, H, ellipsoids[sourceSys]);
+            }
+            if (sourceFormat === "xyh") {
+                const x = parseNumber(v1);
+                const y = parseNumber(v2);
+                const h = parseNumber(v3);
+                const zone = parseInt(document.getElementById("gaussZone").value, 10);
+                const bl = gaussToGeodetic(x, y, zone, ellipsoids[sourceSys]);
+                return geodeticToCartesian(bl.B, bl.L, h, ellipsoids[sourceSys]);
+            }
+            return { X: NaN, Y: NaN, Z: NaN };
+        }
+
+        function sourceToTargetXYZ(xyz, sourceSys, targetSys) {
+            if (sourceSys === targetSys) return xyz;
+
+            const direct = getTransformParams(sourceSys, targetSys);
+            if (direct) return applyHelmert(xyz.X, xyz.Y, xyz.Z, direct);
+
+            // Если прямых параметров нет, выполняем переход через ПЗ-90.11.
+            if (sourceSys !== "pz90" && targetSys !== "pz90") {
+                const toPz90 = getTransformParams(sourceSys, "pz90");
+                const fromPz90 = getTransformParams("pz90", targetSys);
+                if (!toPz90 || !fromPz90) return null;
+                const pz = applyHelmert(xyz.X, xyz.Y, xyz.Z, toPz90);
+                return applyHelmert(pz.X, pz.Y, pz.Z, fromPz90);
+            }
+
+            return null;
+        }
+
+        function targetXYZToOutput(xyz, targetSys) {
+            if (targetFormat === "XYZ") {
+                return [toRu(xyz.X, 4), toRu(xyz.Y, 4), toRu(xyz.Z, 4)];
+            }
+            const geod = cartesianToGeodetic(xyz.X, xyz.Y, xyz.Z, ellipsoids[targetSys]);
+            if (targetFormat === "BLH") {
+                const b = geodeticFormat === "dms" ? formatDMS(geod.B) : toRu(geod.B, GEO_DEG_PREC);
+                const l = geodeticFormat === "dms" ? formatDMS(geod.L) : toRu(geod.L, GEO_DEG_PREC);
+                return [b, l, toRu(geod.H, 4)];
+            }
+            const zone = parseInt(document.getElementById("gaussZone").value, 10);
+            const plane = geodeticToGauss(geod.B, geod.L, zone, ellipsoids[targetSys]);
+            return [toRu(plane.x, 4), toRu(plane.y, 4), toRu(geod.H, 4)];
+        }
+
+        function calculate() {
+            clearInputErrors();
+            hideValidationHint();
+            const sourceSys = document.getElementById("sourceSystem").value;
+            const targetSys = document.getElementById("targetSystem").value;
+            const zoneValue = parseInt(document.getElementById("gaussZone").value, 10);
+            if ((sourceFormat === "xyh" || targetFormat === "xyh") && (!Number.isInteger(zoneValue) || zoneValue < 1 || zoneValue > 60)) {
+                showValidationHint();
+                alert("Для формата xyh укажите корректный номер зоны (1-60).");
+                return;
+            }
+            const rows = document.querySelectorAll("#pointsTable tr");
+            const results = [];
+            let hasValidationErrors = false;
+            let validationMessage = null;
+
+            for (let i = 0; i < rows.length; i++) {
+                const inputs = rows[i].querySelectorAll("input.coordinate-input");
+                if (inputs.length < 3) continue;
+                const raw1 = inputs[0].value.trim();
+                const raw2 = inputs[1].value.trim();
+                const raw3 = inputs[2].value.trim();
+                let rowHasError = false;
+                if (!raw1) { markInputError(inputs[0]); rowHasError = true; }
+                if (!raw2) { markInputError(inputs[1]); rowHasError = true; }
+                if (!raw3) { markInputError(inputs[2]); rowHasError = true; }
+                if (rowHasError) {
+                    hasValidationErrors = true;
+                    continue;
+                }
+
+                const formatCheck = validateRowForFormat(raw1, raw2, raw3, sourceFormat);
+                if (!formatCheck.ok) {
+                    if (formatCheck.allFields) {
+                        markInputError(inputs[0]);
+                        markInputError(inputs[1]);
+                        markInputError(inputs[2]);
+                    } else {
+                        if (formatCheck.e1) markInputError(inputs[0]);
+                        if (formatCheck.e2) markInputError(inputs[1]);
+                        if (formatCheck.e3) markInputError(inputs[2]);
+                    }
+                    if (formatCheck.message && !validationMessage) validationMessage = formatCheck.message;
+                    hasValidationErrors = true;
+                    continue;
+                }
+
+                const sourceXYZ = inputToSourceXYZ(raw1, raw2, raw3, sourceSys);
+                if (![sourceXYZ.X, sourceXYZ.Y, sourceXYZ.Z].every(Number.isFinite)) {
+                    markInputError(inputs[0]);
+                    markInputError(inputs[1]);
+                    markInputError(inputs[2]);
+                    hasValidationErrors = true;
+                    continue;
+                }
+                const targetXYZ = sourceToTargetXYZ(sourceXYZ, sourceSys, targetSys);
+                if (!targetXYZ) {
+                    alert("Параметры преобразования для выбранной пары систем не найдены.");
+                    return;
+                }
+                const [v1, v2, v3] = targetXYZToOutput(targetXYZ, targetSys);
+                results.push({ num: i + 1, v1, v2, v3 });
+            }
+
+            if (hasValidationErrors || results.length === 0) {
+                showValidationHint(validationMessage);
+                document.getElementById("resultsSection").classList.add("hidden");
+                return;
+            }
+
+            displayResults(results);
+        }
+
+        function geodeticToCartesian(Bdeg, Ldeg, H, el) {
+            const B = Bdeg * Math.PI / 180;
+            const L = Ldeg * Math.PI / 180;
+            const sinB = Math.sin(B);
+            const cosB = Math.cos(B);
+            const sinL = Math.sin(L);
+            const cosL = Math.cos(L);
+            const N = el.a / Math.sqrt(1 - el.e2 * sinB * sinB);
+            return {
+                X: (N + H) * cosB * cosL,
+                Y: (N + H) * cosB * sinL,
+                Z: (N * (1 - el.e2) + H) * sinB
+            };
+        }
+
+        function cartesianToGeodetic(X, Y, Z, el) {
+            const L = Math.atan2(Y, X);
+            const p = Math.sqrt(X * X + Y * Y);
+            let B = Math.atan2(Z, p * (1 - el.e2));
+            for (let i = 0; i < 20; i++) {
+                const sinB = Math.sin(B);
+                const N = el.a / Math.sqrt(1 - el.e2 * sinB * sinB);
+                const next = Math.atan2(Z + el.e2 * N * sinB, p);
+                if (Math.abs(next - B) < 1e-12) { B = next; break; }
+                B = next;
+            }
+            const sinB = Math.sin(B);
+            const N = el.a / Math.sqrt(1 - el.e2 * sinB * sinB);
+            const H = p / Math.cos(B) - N;
+            return { B: B * 180 / Math.PI, L: L * 180 / Math.PI, H };
+        }
+
+        function geodeticToGauss(Bdeg, Ldeg, zone, el) {
+            const B = Bdeg * Math.PI / 180;
+            const L = Ldeg * Math.PI / 180;
+            const L0 = (zone * 6 - 3) * Math.PI / 180;
+            const l = L - L0;
+
+            const sinB = Math.sin(B);
+            const cosB = Math.cos(B);
+            const tanB = Math.tan(B);
+            const e2 = el.e2;
+            const ep2 = e2 / (1 - e2);
+
+            const N = el.a / Math.sqrt(1 - e2 * sinB * sinB);
+            const T = tanB * tanB;
+            const C = ep2 * cosB * cosB;
+            const A = l * cosB;
+
+            const M = meridianArc(B, el);
+
+            // Формулы ТМ/Гаусса-Крюгера с единичным масштабом центрального меридиана.
+            const x = M + N * tanB * (
+                (A * A) / 2 +
+                (5 - T + 9 * C + 4 * C * C) * Math.pow(A, 4) / 24 +
+                (61 - 58 * T + T * T + 600 * C - 330 * ep2) * Math.pow(A, 6) / 720
+            );
+
+            const yLocal = N * (
+                A +
+                (1 - T + C) * Math.pow(A, 3) / 6 +
+                (5 - 18 * T + T * T + 72 * C - 58 * ep2) * Math.pow(A, 5) / 120
+            );
+
+            const y = yLocal + zone * 1e6 + 500000;
+            return { x, y };
+        }
+
+        function gaussToGeodetic(x, y, zone, el) {
+            const inferredZone = zone || inferZoneFromY(y);
+            const y0 = y - inferredZone * 1e6 - 500000;
+            const L0 = (inferredZone * 6 - 3) * Math.PI / 180;
+
+            const e2 = el.e2;
+            const ep2 = e2 / (1 - e2);
+            const M = x;
+            const mu = M / (el.a * (1 - e2 / 4 - 3 * Math.pow(e2, 2) / 64 - 5 * Math.pow(e2, 3) / 256));
+            const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+
+            const J1 = 3 * e1 / 2 - 27 * Math.pow(e1, 3) / 32;
+            const J2 = 21 * Math.pow(e1, 2) / 16 - 55 * Math.pow(e1, 4) / 32;
+            const J3 = 151 * Math.pow(e1, 3) / 96;
+            const J4 = 1097 * Math.pow(e1, 4) / 512;
+
+            const fp = mu + J1 * Math.sin(2 * mu) + J2 * Math.sin(4 * mu) + J3 * Math.sin(6 * mu) + J4 * Math.sin(8 * mu);
+            const sinFp = Math.sin(fp);
+            const cosFp = Math.cos(fp);
+            const tanFp = Math.tan(fp);
+
+            const C1 = ep2 * cosFp * cosFp;
+            const T1 = tanFp * tanFp;
+            const N1 = el.a / Math.sqrt(1 - e2 * sinFp * sinFp);
+            const R1 = (el.a * (1 - e2)) / Math.pow(1 - e2 * sinFp * sinFp, 1.5);
+            const D = y0 / N1;
+
+            const B = fp - (N1 * tanFp / R1) * (
+                (D * D) / 2 -
+                (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * ep2) * Math.pow(D, 4) / 24 +
+                (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * ep2 - 3 * C1 * C1) * Math.pow(D, 6) / 720
+            );
+
+            const L = L0 + (
+                D -
+                (1 + 2 * T1 + C1) * Math.pow(D, 3) / 6 +
+                (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * Math.pow(D, 5) / 120
+            ) / cosFp;
+
+            return { B: B * 180 / Math.PI, L: L * 180 / Math.PI };
+        }
+
+        function inferZoneFromY(y) {
+            return Math.max(1, Math.min(60, Math.floor(Math.abs(y) / 1e6)));
+        }
+
+        function meridianArc(B, el) {
+            const e2 = el.e2;
+            const e4 = e2 * e2;
+            const e6 = e4 * e2;
+            const a0 = 1 - e2 / 4 - 3 * e4 / 64 - 5 * e6 / 256;
+            const a2 = 3 * e2 / 8 + 3 * e4 / 32 + 45 * e6 / 1024;
+            const a4 = 15 * e4 / 256 + 45 * e6 / 1024;
+            const a6 = 35 * e6 / 3072;
+            return el.a * (a0 * B - a2 * Math.sin(2 * B) + a4 * Math.sin(4 * B) - a6 * Math.sin(6 * B));
+        }
+
+        function formatDMS(decimalDeg) {
+            const sign = decimalDeg < 0 ? "-" : "";
+            const abs = Math.abs(decimalDeg);
+            const deg = Math.floor(abs);
+            const minFloat = (abs - deg) * 60;
+            const min = Math.floor(minFloat);
+            const sec = (minFloat - min) * 60;
+            return `${sign}${deg}°${min}'${sec.toFixed(4)}"`;
+        }
+
+        function toRu(value, digits) {
+            return Number(value).toFixed(digits).replace(".", ",");
+        }
+
+        function displayResults(results) {
+            const tbody = document.getElementById("resultsTable");
+            tbody.innerHTML = "";
+            results.forEach(r => {
+                const row = document.createElement("tr");
+                row.className = "hover:bg-white/10 transition-colors result-row";
+                row.innerHTML = `<td class="px-4 py-3 font-medium text-white">${r.num}</td>
+                                 <td class="px-4 py-3 font-mono text-white">${r.v1}</td>
+                                 <td class="px-4 py-3 font-mono text-white">${r.v2}</td>
+                                 <td class="px-4 py-3 font-mono text-white">${r.v3}</td>`;
+                tbody.appendChild(row);
+            });
+            document.getElementById("resultsSection").classList.remove("hidden");
+            document.getElementById("resultsSection").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function getResultColumnHeaders() {
+            if (targetFormat === "XYZ") return ["№", "X (м)", "Y (м)", "Z (м)"];
+            if (targetFormat === "BLH") return ["№", "B", "L", "H (м)"];
+            return ["№", "x (м)", "y (м)", "h (м)"];
+        }
+
+        function centerInCell(text, width) {
+            const value = String(text);
+            if (value.length >= width) return value;
+            const padLeft = Math.floor((width - value.length) / 2);
+            return " ".repeat(padLeft) + value + " ".repeat(width - value.length - padLeft);
+        }
+
+        function buildAlignedResultsTable(headers, dataRows) {
+            const colGap = "   ";
+            const widths = headers.map((header, index) => {
+                const cells = dataRows.map(row => String(row[index] ?? ""));
+                return Math.max(header.length, ...cells.map(cell => cell.length), 1);
+            });
+            const headerLine = headers.map((header, index) => centerInCell(header, widths[index])).join(colGap);
+            const bodyLines = dataRows.map(row =>
+                row.map((cell, index) => centerInCell(cell, widths[index])).join(colGap)
+            );
+            return [headerLine, ...bodyLines].join("\n");
+        }
+
+        function copyResults() {
+            const rows = document.querySelectorAll("#resultsTable tr");
+            const headers = getResultColumnHeaders();
+            const dataRows = [];
+            rows.forEach(row => {
+                const c = row.querySelectorAll("td");
+                dataRows.push([c[0].textContent.trim(), c[1].textContent.trim(), c[2].textContent.trim(), c[3].textContent.trim()]);
+            });
+            navigator.clipboard.writeText(buildAlignedResultsTable(headers, dataRows)).then(() => alert("Результаты скопированы!"));
+        }
+
+        function downloadResultsTxt() {
+            const rows = document.querySelectorAll("#resultsTable tr");
+            if (!rows.length) {
+                alert("Нет данных для скачивания.");
+                return;
+            }
+
+            const sourceSystem = getSystemDisplayName(document.getElementById("sourceSystem").value);
+            const targetSystem = getSystemDisplayName(document.getElementById("targetSystem").value);
+            const dateStr = new Date().toLocaleString("ru-RU");
+            let text = "GEOPOINT - Результаты преобразования координат\n";
+            text += `Дата: ${dateStr}\n`;
+            text += `Исходная СК: ${sourceSystem}\n`;
+            text += `Требуемая СК: ${targetSystem}\n`;
+            text += `Формат результата: ${targetFormat}\n\n`;
+
+            const headers = getResultColumnHeaders();
+            const dataRows = [];
+            rows.forEach(row => {
+                const c = row.querySelectorAll("td");
+                dataRows.push([c[0].textContent.trim(), c[1].textContent.trim(), c[2].textContent.trim(), c[3].textContent.trim()]);
+            });
+            text += buildAlignedResultsTable(headers, dataRows) + "\n";
+
+            const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `coordinate-results-${document.getElementById("targetSystem").value}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            buildSystemSelect("source", document.getElementById("sourceSystem").value);
+            buildSystemSelect("target", document.getElementById("targetSystem").value);
+            updateLabels("source", sourceFormat);
+            updateResultLabels();
+            updateInputPlaceholders();
+            if (window.lucide) lucide.createIcons();
+            const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+            const mobileMenu = document.getElementById("mobileMenu");
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener("click", () => mobileMenu.classList.toggle("hidden"));
+            }
+        });
+    </script>
+</body>
+</html>

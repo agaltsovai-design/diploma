@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Определение плоских прямоугольных координат Гаусса – Крюгера | GEOPOINT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/300.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/500.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/700.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/800.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "geo-orange": "#FF6B31",
+                        "geo-orange-dark": "#EA580C",
+                        "geo-blue": "#3166FF",
+                        "geo-light": "#EFF6FF"
+                    },
+                    fontFamily: { inter: ["Inter", "sans-serif"] }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background: #FDF8F5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            color: #0f172a;
+            font-size: 1.05rem;
+        }
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #3166FF;
+            border-radius: 9999px;
+        }
+        .nav-link { color: #1E293B; transition: all .2s ease; cursor: pointer; font-size: 1.05rem; }
+        .nav-link:hover { color: #3166FF; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            opacity: 0.85;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .back-link:hover { opacity: 1; gap: 12px; }
+        .back-link .back-icon { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .back-link:hover .back-icon { transform: translateX(-3px); }
+        .hero-title { letter-spacing: .01em; }
+        .section-title { font-size: 1.75rem; font-weight: 800; line-height: 1.2; }
+        .glass-card { background: #fff; border: 1px solid #edf1f7; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08); }
+        .section-heading-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #fff;
+        }
+        .section-heading-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); }
+        .section-heading-icon.blue { background: linear-gradient(135deg, #3166FF, #1E40AF); }
+        .section-heading-icon.green { background: linear-gradient(135deg, #10B981, #059669); }
+        .section-heading-icon.purple { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+        .info-note {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1.25rem 1.5rem;
+            border-radius: 1rem;
+            margin-top: 1.5rem;
+        }
+        .info-note svg { flex-shrink: 0; margin-top: 2px; }
+        .info-note p { font-size: 0.95rem; color: #374151; line-height: 1.6; }
+        .info-note.green { background: #F0FDF4; border: 1px solid #BBF7D0; }
+        .info-note.green svg { color: #10B981; }
+        .info-note.blue { background: #EFF6FF; border: 1px solid #BFDBFE; }
+        .info-note.blue svg { color: #3166FF; }
+        .info-note.warn { background: #FFF7ED; border: 1px solid #FED7AA; }
+        .info-note.warn svg { color: #FF6B31; }
+        .formula-card {
+            background: #fff;
+            border: 1px solid #E8ECF0;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow-x: auto;
+        }
+        .formula-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #3166FF;
+            margin-bottom: 0.75rem;
+        }
+        .formula-line {
+            display: block;
+            padding: 0.15rem 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.25rem;
+            color: #1e293b;
+            text-align: center;
+            line-height: 2;
+        }
+        .formula-line + .formula-line { margin-top: 0.15rem; }
+        .formula-line.wide {
+            font-size: 1.05rem;
+            line-height: 1.85;
+            white-space: nowrap;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 0.25em;
+            font-size: 0.9em;
+        }
+        .frac > span { display: block; padding: 0.1em 0.35em; text-align: center; }
+        .frac span.bottom { border-top: 1.5px solid #1e293b; }
+        .math-group { display: inline; white-space: normal; }
+        sup, sub { font-size: 0.75em; }
+        .step-list {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+            counter-reset: step;
+        }
+        .step-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.25rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.95rem;
+            color: #334155;
+            line-height: 1.55;
+        }
+        .step-list li:last-child { border-bottom: none; }
+        .step-list li::before {
+            content: counter(step);
+            counter-increment: step;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3166FF;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .figure-img {
+            width: 100%;
+            max-width: min(560px, 90vw);
+            height: auto;
+        }
+        .figure-legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        .figure-legend-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #F8FAFC;
+            border-radius: 0.75rem;
+            border: 1px solid #E2E8F0;
+        }
+        .figure-legend-symbol {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #3166FF;
+            min-width: 36px;
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+        }
+        .figure-legend-text { font-size: 0.85rem; color: #475569; line-height: 1.4; }
+        .figure-legend-text strong { color: #0f172a; }
+        .denotations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .denotation-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .denotation-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #FF6B31;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-family: 'Times New Roman', serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(255, 107, 49, 0.3);
+        }
+        .denotation-icon.blue-icon { background: #3166FF; box-shadow: 0 4px 10px rgba(49,102,255,0.3); }
+        .denotation-icon.green-icon { background: #10B981; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+        .denotation-title { font-weight: 700; font-size: 1rem; color: #0f172a; margin-bottom: 0.2rem; }
+        .denotation-text { font-size: 0.85rem; color: #64748B; line-height: 1.4; }
+        .expandable-section {
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            background: #fff;
+            transition: all .3s ease;
+        }
+        .expandable-section.open { box-shadow: 0 8px 24px rgba(255,107,49,0.08); border-color: #FED7AA; }
+        .expandable-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            transition: background .2s;
+            user-select: none;
+        }
+        .expandable-header:hover { background: #FFF7ED; }
+        .expandable-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .expandable-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); color: #fff; }
+        .expandable-title { font-weight: 700; font-size: 1rem; color: #0f172a; }
+        .expandable-subtitle { font-size: .8rem; color: #94A3B8; }
+        .expandable-arrow { margin-left: auto; transition: transform .3s ease; color: #94A3B8; }
+        .expandable-section.open .expandable-arrow { transform: rotate(180deg); color: #FF6B31; }
+        .expandable-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; }
+        .expandable-section.open .expandable-body { max-height: 10000px; }
+        .expandable-body-inner { padding: 0 1.5rem 1.5rem; }
+        @media (max-width: 640px) {
+            .section-title { font-size: 1.5rem; }
+            .denotations-grid, .figure-legend-grid { grid-template-columns: 1fr; }
+            .example-row { flex-direction: column; gap: 0.25rem; }
+            .example-row .value { text-align: left; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="fixed w-full top-0 z-50 pt-4 px-4">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-8 py-4 flex justify-between items-center shadow-lg">
+                <a href="index.html" class="flex items-center gap-2">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="Главная страница.html" class="nav-link text-base font-semibold">Главная</a>
+                    <a href="Главная страница.html#calculators" class="nav-link text-base font-semibold">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link nav-link-active text-base font-semibold">Теория</a>
+                    <a href="О проекте.html" class="nav-link text-base font-semibold">О проекте</a>
+                    <a href="Справка.html" class="nav-link text-base font-semibold">Справка</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-4">
+        <div class="max-w-6xl mx-auto pt-0 pb-6">
+            <div class="bg-geo-blue rounded-3xl p-8 mb-8 text-white shadow-lg">
+                <a href="Теория.html" class="back-link mb-6">
+                    <i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i>
+                    НАЗАД К ТЕМАМ
+                </a>
+                <h1 class="hero-title section-title max-w-6xl mb-4">ОПРЕДЕЛЕНИЕ ПЛОСКИХ ПРЯМОУГОЛЬНЫХ КООРДИНАТ<br> ГАУССА – КРЮГЕРА</h1>
+                <p class="text-blue-100 text-[1.1rem] max-w-6xl leading-relaxed">Прямое преобразование геодезических координат (B, L) в плоские прямоугольные координаты (x′, y′) в проекции Гаусса – Крюгера</p>
+            </div>
+
+            <!-- Введение -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon orange">
+                        <i data-lucide="book-open" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">ВВЕДЕНИЕ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Прямая задача проекции Гаусса – Крюгера</p>
+                    </div>
+                </div>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    На рисунке 1 представлена геометрическая схема взаимосвязи геодезических координат и плоских прямоугольных координат в проекции Гаусса – Крюгера. Схема иллюстрирует переход от положения точки <strong>K</strong> на поверхности эллипсоида к её изображению на плоскости, где <strong>x</strong> — длина дуги меридиана от экватора, <strong>y</strong> — расстояние от осевого меридиана.
+                </p>
+                <p class="text-slate-600 leading-relaxed">
+                    Для решения инженерных задач, создания топографических карт и планов используется система плоских прямоугольных координат, получаемая путём проекции поверхности эллипсоида на плоскость. В Российской Федерации применяется проекция Гаусса – Крюгера — частный случай поперечной цилиндрической равноугольной проекции: поверхность эллипсоида проецируется на цилиндр, касающийся по осевому меридиану зоны; в каждой зоне ось абсцисс <strong>X</strong> совпадает с изображением осевого меридиана, ось ординат <strong>Y</strong> — с изображением экватора.
+                </p>
+            </div>
+
+            <!-- Геометрическая интерпретация -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon blue">
+                        <i data-lucide="eye" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">ГЕОМЕТРИЧЕСКАЯ ИНТЕРПРЕТАЦИЯ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Связь геодезических и плоских прямоугольных координат</p>
+                    </div>
+                </div>
+
+                <figure class="my-6 text-center bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                    <img src="assets/gauss-BLH-xy.svg" alt="Связь геодезических и плоских прямоугольных координат" class="figure-img mx-auto" width="320" height="320" loading="lazy">
+                    <figcaption class="text-sm text-slate-500 mt-4">Рис. 1 — Связь геодезических и плоских прямоугольных координат</figcaption>
+                </figure>
+
+                <p class="text-xs font-bold uppercase tracking-wide text-slate-500 text-center mb-3">Обозначения на рисунке</p>
+                <div class="figure-legend-grid mb-6">
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">O</div>
+                        <div class="figure-legend-text"><strong>Начало координат</strong> — пересечение осей плоской системы.</div>
+                    </div>
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">K</div>
+                        <div class="figure-legend-text"><strong>Точка на эллипсоиде</strong> — произвольная точка на поверхности эллипсоида.</div>
+                    </div>
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">B<sub>x</sub></div>
+                        <div class="figure-legend-text"><strong>Геодезическая широта</strong> точки K.</div>
+                    </div>
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">K<sub>1</sub>, K<sub>2</sub></div>
+                        <div class="figure-legend-text"><strong>Проекции точки K</strong> на оси координат.</div>
+                    </div>
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">l</div>
+                        <div class="figure-legend-text"><strong>Разность долгот</strong> — отклонение долготы точки от осевого меридиана зоны.</div>
+                    </div>
+                </div>
+
+                <div class="info-note blue" style="margin-top: 0;">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <p>Аргументами формул, связывающих плоские прямоугольные координаты Гаусса – Крюгера и геодезические координаты, являются геодезическая широта <strong>B</strong> и разность долгот <strong>l</strong> точки и осевого меридиана зоны.</p>
+                </div>
+            </div>
+
+            <!-- Координатные зоны -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon green">
+                        <i data-lucide="map" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">КООРДИНАТНЫЕ ЗОНЫ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Номер зоны, осевой меридиан и разность долгот</p>
+                    </div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">Первым этапом необходимо определить номер зоны <strong>n</strong>:</p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Параметры шестиградусной зоны</div>
+                    <div class="formula-line">
+                        n = Целое1 <span class="math-group">(</span><span class="frac"><span>L + 3°</span><span class="bottom">6°</span></span><span class="math-group">)</span> + 1
+                    </div>
+                    <div class="formula-line">
+                        L<sub>0</sub> = 6° · n − 3°
+                    </div>
+                    <div class="formula-line">
+                        l = L − L<sub>0</sub>
+                    </div>
+                </div>
+
+               <div class="info-note blue">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <p>«Целое 1» — получение целого числа путём округления результата вычисления по Гауссу.</p>
+                </div>
+	</div>
+            <!-- Действительные координаты -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon blue">
+                        <i data-lucide="calculator" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">ДЕЙСТВИТЕЛЬНЫЕ КООРДИНАТЫ x, y</h2>
+                        <p class="text-sm text-slate-500 mt-1">Вычисление в проекции Гаусса – Крюгера</p>
+                    </div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">Вычисление действительных значений плоских прямоугольных координат <strong>x</strong>, <strong>y</strong> в проекции Гаусса – Крюгера:</p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Действительная абсцисса</div>
+                    <div class="formula-line">
+                        x = X + Δx
+                    </div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Приращение абсциссы по разности долгот</div>
+                    <div class="formula-line wide">
+                        Δx = <span class="frac"><span>N cos B sin B · l²</span><span class="bottom">2ρ²</span></span>
+                        <span class="math-group">{ 1 + </span><span class="frac"><span>l² cos² B</span><span class="bottom">12ρ²</span></span>
+                        <span class="math-group">(5 − tg² B + 9η² + …) + </span><span class="frac"><span>l⁴ cos⁴ B</span><span class="bottom">360ρ⁴</span></span>
+                        <span class="math-group">(61 − 58 tg² B + tg⁴ B) + … }</span>
+                    </div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Действительная ордината</div>
+                    <div class="formula-line wide">
+                        y = <span class="frac"><span>N cos B · l</span><span class="bottom">ρ</span></span>
+                        <span class="math-group">{ 1 + </span><span class="frac"><span>l² cos² B</span><span class="bottom">6ρ²</span></span>
+                        <span class="math-group">(1 − tg² B + η²) + </span><span class="frac"><span>l⁴ cos⁴ B</span><span class="bottom">120ρ⁴</span></span>
+                        <span class="math-group">(5 − 18 tg² B + tg⁴ B + 14η² − 58η² tg² B) + … }</span>
+                    </div>
+                </div>
+
+                
+                <div class="formula-card">
+                    <div class="formula-title">Длина дуги меридиана от экватора</div>
+                    <div class="formula-line">
+                        X = a(1 − e²)
+                        <span class="math-group">(</span>
+                        G<sub>0</sub> <span class="frac"><span>B</span><span class="bottom">ρ</span></span>
+                        + G<sub>1</sub> sin 2B + G<sub>2</sub> sin 4B + G<sub>3</sub> sin 6B + …
+                        <span class="math-group">)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Коэффициенты G -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon purple">
+                        <i data-lucide="sigma" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">КОЭФФИЦИЕНТЫ G<sub>0</sub> – G<sub>3</sub></h2>
+                        <p class="text-sm text-slate-500 mt-1">Ряды по степеням e²</p>
+                    </div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">Для вычисления коэффициентов G<sub>0</sub>, G<sub>1</sub>, G<sub>2</sub>, G<sub>3</sub> применяются следующие формулы:</p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Коэффициенты ряда дуги меридиана</div>
+                    <div class="formula-line wide">
+                        G<sub>0</sub> = 1 + <span class="frac"><span>3</span><span class="bottom">4</span></span> e²
+                        + <span class="frac"><span>45</span><span class="bottom">64</span></span> e⁴
+                        + <span class="frac"><span>175</span><span class="bottom">256</span></span> e⁶
+                        + <span class="frac"><span>11025</span><span class="bottom">16384</span></span> e⁸ + …
+                    </div>
+                    <div class="formula-line wide">
+                        G<sub>1</sub> = <span class="frac"><span>3</span><span class="bottom">8</span></span> e²
+                        + <span class="frac"><span>15</span><span class="bottom">32</span></span> e⁴
+                        + <span class="frac"><span>525</span><span class="bottom">1024</span></span> e⁶
+                        + <span class="frac"><span>2205</span><span class="bottom">4096</span></span> e⁸ + …
+                    </div>
+                    <div class="formula-line wide">
+                        G<sub>2</sub> = <span class="frac"><span>15</span><span class="bottom">256</span></span> e⁴
+                        + <span class="frac"><span>105</span><span class="bottom">1024</span></span> e⁶
+                        + <span class="frac"><span>2205</span><span class="bottom">16384</span></span> e⁸ + …
+                    </div>
+                    <div class="formula-line">
+                        G<sub>3</sub> = <span class="frac"><span>35</span><span class="bottom">3072</span></span> e⁶
+                        + <span class="frac"><span>315</span><span class="bottom">12288</span></span> e⁸ + …
+                    </div>
+                </div>
+            </div>
+
+            <!-- Условные координаты + обозначения -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon green">
+                        <i data-lucide="layers" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">УСЛОВНЫЕ КООРДИНАТЫ И АЛГОРИТМ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Смещение оси Y, номер зоны и порядок вычислений</p>
+                    </div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">Вычисление условных плоских прямоугольных координат в проекции Гаусса – Крюгера:</p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Условные плоские прямоугольные координаты</div>
+                    <div class="formula-line">
+                        x′ = x
+                    </div>
+                    <div class="formula-line">
+                        y′ = y + n · 10⁶ + 5 · 10⁵
+                    </div>
+                </div>
+
+               
+                <div class="info-note warn">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <p>При вычислениях необходимо следить за единицами измерения углов. При расчёте <strong>Δx</strong>, <strong>y</strong> и <strong>X</strong> величина <strong>l</strong> и широта <strong>B</strong> подставляются в угловых единицах, согласованных с числом <strong>ρ</strong> (ρ″ = 206264,8062″ при работе в секундах дуги).</p>
+                </div>
+
+                <!-- Единственный аккордеон -->
+                <div class="expandable-section mt-6">
+                    <div class="expandable-header" onclick="toggleSection(this)">
+                        <div class="expandable-icon orange">
+                            <i data-lucide="type" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="expandable-title">ОБОЗНАЧЕНИЯ В ФОРМУЛАХ</div>
+                            <div class="expandable-subtitle">Символы и параметры преобразования B, L → x′, y′</div>
+                        </div>
+                        <i data-lucide="chevron-down" class="expandable-arrow w-5 h-5"></i>
+                    </div>
+                    <div class="expandable-body">
+                        <div class="expandable-body-inner">
+                            <div class="denotations-grid">
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">B</div>
+                                    <div>
+                                        <div class="denotation-title">Геодезическая широта</div>
+                                        <div class="denotation-text">Широта точки на эллипсоиде</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon blue-icon">L</div>
+                                    <div>
+                                        <div class="denotation-title">Геодезическая долгота</div>
+                                        <div class="denotation-text">Долгота точки на эллипсоиде</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon green-icon">L<sub>0</sub></div>
+                                    <div>
+                                        <div class="denotation-title">Долгота осевого меридиана</div>
+                                        <div class="denotation-text">Центральный меридиан шестиградусной зоны n</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">l</div>
+                                    <div>
+                                        <div class="denotation-title">Разность долгот</div>
+                                        <div class="denotation-text">l = L − L<sub>0</sub></div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon blue-icon">n</div>
+                                    <div>
+                                        <div class="denotation-title">Номер зоны</div>
+                                        <div class="denotation-text">Номер шестиградусной координатной зоны</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon green-icon">x, y</div>
+                                    <div>
+                                        <div class="denotation-title">Действительные плоские координаты</div>
+                                        <div class="denotation-text">Координаты без смещения оси Y</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">x′, y′</div>
+                                    <div>
+                                        <div class="denotation-title">Условные плоские координаты</div>
+                                        <div class="denotation-text">Координаты с учётом смещения 500 000 м и номера зоны</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon blue-icon">X</div>
+                                    <div>
+                                        <div class="denotation-title">Длина дуги меридиана</div>
+                                        <div class="denotation-text">От экватора до параллели с широтой B</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon green-icon">N</div>
+                                    <div>
+                                        <div class="denotation-title">Радиус кривизны первого вертикала</div>
+                                        <div class="denotation-text">N = a / W, W = √(1 − e² sin² B)</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">a</div>
+                                    <div>
+                                        <div class="denotation-title">Большая полуось эллипсоида</div>
+                                        <div class="denotation-text">Размерный параметр референц-эллипсоида, м</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon blue-icon">e²</div>
+                                    <div>
+                                        <div class="denotation-title">Квадрат первого эксцентриситета</div>
+                                        <div class="denotation-text">e² = (a² − b²) / a²</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon green-icon">η²</div>
+                                    <div>
+                                        <div class="denotation-title">Вспомогательный параметр</div>
+                                        <div class="denotation-text">η² = e′² cos² B</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">ρ</div>
+                                    <div>
+                                        <div class="denotation-title">Число угловых секунд в радиане</div>
+                                        <div class="denotation-text">ρ″ = 206264,8062″</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon blue-icon">G<sub>0</sub></div>
+                                    <div>
+                                        <div class="denotation-title">Коэффициенты ряда</div>
+                                        <div class="denotation-text">Коэффициенты разложения длины дуги меридиана</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах WGS-84, ГСК-2011, ПЗ-90.11 и Красовского. Точность, скорость и удобство.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.html" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Прямая задача.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="Обратная задача.html" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="Преобразование координат.html" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="Площадь и размеры сфероид. трапеции.HTML" class="hover:text-white transition-colors">Площадь и размеры рамок трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Дипломный проект, СГУГиТ.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleSection(header) {
+            const section = header.closest('.expandable-section');
+            section.classList.toggle('open');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

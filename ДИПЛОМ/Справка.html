@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Справка | GEOPOINT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/300.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/500.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/700.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/800.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "geo-orange": "#FF6B31",
+                        "geo-orange-dark": "#EA580C",
+                        "geo-blue": "#3166FF",
+                        "geo-light": "#EFF6FF"
+                    },
+                    fontFamily: { inter: ["Inter", "sans-serif"] }
+                }
+            }
+        };
+    </script>
+    <style>
+        :root { --ring: rgba(49, 102, 255, 0.2); }
+        body {
+            font-family: "Inter", sans-serif;
+            background: #FDF8F5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            color: #0f172a;
+        }
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #3166FF;
+            border-radius: 9999px;
+        }
+        .nav-link { color: #1E293B; transition: all .2s ease; cursor: pointer; }
+        .nav-link:hover { color: #3166FF; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: white;
+            opacity: 0.85;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+        .back-link:hover { opacity: 1; gap: 12px; }
+        .back-link .back-icon { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .back-link:hover .back-icon { transform: translateX(-3px); }
+        .hero-title { letter-spacing: .01em; }
+        .section-title { font-size: 1.75rem; font-weight: 800; line-height: 1.2; }
+        .glass-card { background: #fff; border: 1px solid #edf1f7; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08); }
+        
+        .faq-item {
+            border-bottom: 1px solid #E2E8F0;
+            transition: background .2s;
+        }
+        .faq-item:last-child { border-bottom: none; }
+        .faq-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        .faq-header:hover { background: #F8FAFC; }
+        .faq-question { font-weight: 600; color: #0f172a; flex: 1; padding-right: 1rem; font-size: .95rem; }
+        .faq-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: transform .3s ease, background .2s, color .2s;
+        }
+        .faq-item.open .faq-icon { transform: rotate(180deg); background: #EFF6FF; color: #3166FF; }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .faq-answer-inner { padding: 0 1.5rem 1.5rem; color: #475569; line-height: 1.6; font-size: .9rem; }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: 1.25rem 1.5rem;
+            background: linear-gradient(135deg, #F8FAFC, #EFF6FF);
+            border-bottom: 1px solid #E2E8F0;
+        }
+        .section-header:first-child { border-top-left-radius: 1rem; border-top-right-radius: 1rem; }
+        .section-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .section-icon.blue { background: #3166FF; color: #fff; }
+        .section-icon.orange { background: #FF6B31; color: #fff; }
+        .section-icon.green { background: #10B981; color: #fff; }
+        .section-icon.purple { background: #8B5CF6; color: #fff; }
+        .section-icon.gray { background: #64748B; color: #fff; }
+        .section-title-small { font-weight: 700; font-size: 1.05rem; color: #0f172a; }
+        
+        .search-wrapper { position: relative; }
+        .search-input {
+            border: 2px solid #E2E8F0;
+            border-radius: .75rem;
+            padding: .85rem 1rem .85rem 3rem;
+            font-size: .95rem;
+            transition: all .2s;
+            width: 100%;
+            background: #fff;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #3166FF;
+            box-shadow: 0 0 0 4px var(--ring);
+        }
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="fixed w-full top-0 z-50 pt-4 px-4">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-8 py-4 flex justify-between items-center shadow-lg">
+                <a href="index.html" class="flex items-center gap-2">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="Главная страница.html" class="nav-link text-base font-semibold">Главная</a>
+                    <a href="Главная страница.html#calculators" class="nav-link text-base font-semibold">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link text-base font-semibold">Теория</a>
+                    <a href="О проекте.html" class="nav-link text-base font-semibold">О проекте</a>
+                    <a href="#" class="nav-link nav-link-active text-base font-semibold">Справка</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-4">
+        <div class="max-w-6xl mx-auto pt-0 pb-6">
+            <!-- HERO -->
+            <div class="bg-geo-orange rounded-3xl p-8 mb-8 text-white shadow-lg">
+                <a href="Главная страница.html" class="back-link mb-6">
+                    <i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i>
+                    НАЗАД НА ГЛАВНУЮ
+                </a>
+                <h1 class="hero-title section-title mb-3">ЧАСТО ЗАДАВАЕМЫЕ ВОПРОСЫ</h1>
+                <p class="text-blue-100 text-[1.05rem] max-w-6xl leading-relaxed">Ответы на популярные вопросы о работе платформы, точности расчётов, вводе данных и использовании сервиса</p>
+            </div>
+
+            <!-- Search -->
+            <div class="glass-card rounded-2xl p-6 mb-8">
+                <div class="search-wrapper">
+                    <i data-lucide="search" class="search-icon w-5 h-5"></i>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Найти вопрос..." />
+                </div>
+            </div>
+
+            <!-- Section: Общие вопросы о сервисе -->
+            <div class="glass-card rounded-2xl mb-8 overflow-hidden faq-category" data-category="general">
+                <div class="section-header">
+                    <div class="section-icon blue"><i data-lucide="globe" class="w-5 h-5"></i></div>
+                    <div>
+                        <div class="section-title-small">🔹 Общие вопросы о сервисе</div>
+                        <div class="text-xs text-slate-500 mt-0.5">Информация о GEOPOINT и его назначении</div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="что такое geopoint">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Что такое GEOPOINT?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>GEOPOINT — это веб-сервис для автоматизации геодезических расчётов на поверхности земного эллипсоида. Сервис разработан в рамках дипломного проекта бакалавра СГУГиТ и предоставляет инструменты для решения прямых и обратных геодезических задач, преобразования координат и вычисления параметров сфероидических трапеций.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="зачем нужен сервис профессиональное по credo trimble">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Зачем нужен этот сервис, если есть профессиональное ПО?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Профессиональное ПО часто требует лицензии, установки и обучения. GEOPOINT — бесплатный, работает в браузере без установки, имеет интуитивный интерфейс и подходит для быстрых расчётов, обучения и проверки результатов. Это не замена профессиональному ПО, а удобный вспомогательный инструмент.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="официальная отчётность кадастровая исполнительная документация">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Можно ли использовать результаты расчётов для официальной отчётности?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Сервис предназначен для учебных целей, предварительных расчётов и самопроверки. Для официальной кадастровой или исполнительной документации рекомендуется использовать сертифицированное ПО и перепроверять результаты по нормативным методикам.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="телефон мобильное устройство смартфон планшет">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Работает ли сервис на телефоне?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Да, интерфейс адаптирован для мобильных устройств. Вы можете выполнять расчёты в поле, используя смартфон или планшет с доступом в интернет.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Вопросы по точности и методам расчёта -->
+            <div class="glass-card rounded-2xl mb-8 overflow-hidden faq-category" data-category="accuracy">
+                <div class="section-header">
+                    <div class="section-icon orange"><i data-lucide="target" class="w-5 h-5"></i></div>
+                    <div>
+                        <div class="section-title-small">🔹 Вопросы по точности и методам расчёта</div>
+                        <div class="text-xs text-slate-500 mt-0.5">Формулы, эллипсоиды и точность вычислений</div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="формулы расчёты телеганов морозов бессель">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">По каким формулам выполняются расчёты?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Все вычисления основаны на строгих формулах сфероидической геодезии из учебников <strong>Н.А. Телеганова</strong> и <strong>В.П. Морозова</strong>. Для прямой и обратной задач используется <strong>метод Бесселя</strong>, обеспечивающий высокую точность на любых расстояниях.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="эллипсоид красовского ск-42 wgs-84 пз-90.11">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Какой эллипсоид используется по умолчанию?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>По умолчанию расчёты ведутся на <strong>эллипсоиде Красовского (СК-42)</strong>, так как он является основным для государственных систем координат в РФ. В настройках можно выбрать <strong>WGS-84</strong> или <strong>ПЗ-90.11</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="точность вычислений координаты расстояния площади">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Какова точность вычислений?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Точность расчётов соответствует требованиям высшей геодезии:</p>
+                            <ul class="list-disc pl-5 mt-2 space-y-1">
+                                <li>Координаты: до <strong>0.0001″</strong> (угловые секунды)</li>
+                                <li>Расстояния: до <strong>0.001 м</strong></li>
+                                <li>Площади: до <strong>0.01 м²</strong></li>
+                            </ul>
+                            <p class="mt-2">Фактическая точность зависит от точности введённых исходных данных.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="редукция эллипсоид гаусс-крюгер поправки">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Учитывается ли редукция на эллипсоид?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Да, все расчёты выполняются на поверхности референц-эллипсоида. При необходимости перехода к плоским координатам (проекция Гаусса-Крюгера) применяются соответствующие поправки за искажения.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Вопросы по вводу данных -->
+            <div class="glass-card rounded-2xl mb-8 overflow-hidden faq-category" data-category="input">
+                <div class="section-header">
+                    <div class="section-icon green"><i data-lucide="keyboard" class="w-5 h-5"></i></div>
+                    <div>
+                        <div class="section-title-small">🔹 Вопросы по вводу данных</div>
+                        <div class="text-xs text-slate-500 mt-0.5">Форматы координат, ошибки и экспорт результатов</div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="формат координаты градусы минуты секунды десятичные">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">В каком формате нужно вводить координаты?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Поддерживаются два формата:</p>
+                            <ul class="list-disc pl-5 mt-2 space-y-1">
+                                <li><strong>Градусы (десятичные):</strong> 55.751244</li>
+                                <li><strong>Градусы/Минуты/Секунды:</strong> 55°45'04.5"</li>
+                            </ul>
+                            <p class="mt-2">Формат определяется автоматически, но рекомендуется использовать <strong>десятичные градусы</strong> для избежания ошибок.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="ошибка ввода красное поле заполнение формат">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Что делать, если калькулятор выдаёт ошибку при вводе?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Проверьте:</p>
+                            <ul class="list-disc pl-5 mt-2 space-y-1">
+                                <li>Все ли обязательные поля заполнены</li>
+                                <li>Корректность формата чисел (<strong>точка</strong> как разделитель дробной части)</li>
+                                <li>Диапазон значений (широта: -90°…+90°, долгота: -180°…+180°, угол: 0°…360°)</li>
+                            </ul>
+                            <p class="mt-2">При ошибке поле подсвечивается <span class="text-red-500 font-semibold">красным</span>, и появляется подсказка.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="скопировать результат копировать экспорт текстовый">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Можно ли скопировать результат?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Да, рядом с каждым результатом есть кнопка 📋 <strong>«Копировать»</strong>. Также результаты можно экспортировать в текстовом формате для вставки в отчёт.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Вопросы для студентов -->
+            <div class="glass-card rounded-2xl mb-8 overflow-hidden faq-category" data-category="students">
+                <div class="section-header">
+                    <div class="section-icon purple"><i data-lucide="graduation-cap" class="w-5 h-5"></i></div>
+                    <div>
+                        <div class="section-title-small">🔹 Вопросы для студентов</div>
+                        <div class="text-xs text-slate-500 mt-0.5">Лабораторные работы, теория и подготовка к экзамену</div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="лабораторные работы высшая геодезия сгугит">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Можно ли использовать сервис для лабораторных работ?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Да, GEOPOINT разработан с учётом учебных планов СГУГиТ. Сервис позволяет студентам самостоятельно проверять расчёты, верифицировать алгоритмы преобразования координат и решения задач на эллипсоиде, а преподавателям — демонстрировать решение задач в реальном времени на занятиях по высшей геодезии.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="теория формулы схемы учебники гост">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Где посмотреть теорию по каждой задаче?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>На странице <strong>«Теория»</strong> размещены краткие теоретические сведения, формулы и схемы по каждому типу расчётов. Также приведены ссылки на учебники и ГОСТы для углублённого изучения.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="экзамен ручные расчёты проверка">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Как подготовиться к экзамену с помощью сервиса?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Рекомендуется решать задачи вручную, а затем вводить исходные данные в сервис для самопроверки. Это помогает отработать навык контроля вычислений, понять логику алгоритмов и выявить типичные ошибки при работе с эллипсоидальными величинами и системами координат.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Технические вопросы -->
+            <div class="glass-card rounded-2xl mb-8 overflow-hidden faq-category" data-category="technical">
+                <div class="section-header">
+                    <div class="section-icon gray"><i data-lucide="settings" class="w-5 h-5"></i></div>
+                    <div>
+                        <div class="section-title-small">🔹 Технические вопросы</div>
+                        <div class="text-xs text-slate-500 mt-0.5">Регистрация, загрузка и совместимость</div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="регистрация бесплатно данные сервер">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Нужно ли регистрироваться для использования сервиса?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Нет, сервис <strong>полностью бесплатен</strong> и не требует регистрации. Все расчёты выполняются в браузере, данные не сохраняются на сервере.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-search="не загружается интернет браузер блокировщик">
+                    <div class="faq-header" onclick="toggleFaq(this)">
+                        <span class="faq-question">Что делать, если сервис не загружается?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <p>Проверьте:</p>
+                            <ul class="list-disc pl-5 mt-2 space-y-1">
+                                <li>Наличие интернет-соединения</li>
+                                <li>Актуальность браузера</li>
+                                <li>Отключение блокировщиков рекламы (могут блокировать скрипты)</li>
+                            </ul>
+                            <p class="mt-2">Если проблема сохраняется — напишите в раздел <strong>«Контакты»</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Us Section -->
+            <div class="bg-geo-orange rounded-2xl p-6 md:p-8 mb-8 text-white shadow-lg">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="mail" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold leading-none mb-1">СВЯЗАТЬСЯ С НАМИ</h2>
+                        <p class="text-orange-100 text-sm">Есть предложения, нашли ошибку или хотите обсудить сотрудничество?</p>
+                    </div>
+                </div>
+                <p class="text-white/90 leading-relaxed mb-6">
+                    Мы всегда открыты для обратной связи. Если вы заметили неточность в вычислениях, у вас есть идея нового калькулятора или вы хотите предложить улучшение — напишите нам!
+                </p>
+                <div class="flex flex-wrap gap-3">
+                    <a href="mailto:Agaltsova.i@mail.ru" class="bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-colors inline-flex items-center gap-2">
+                        <i data-lucide="mail" class="w-4 h-4"></i> Написать на почту
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <span class="text-2xl font-bold">
+                         <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах WGS-84, ГСК-2011, ПЗ-90.11 и Красовского. Точность, скорость и удобство.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.html" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Прямая задача.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="Обратная задача.html" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="Преобразование координат.html" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="Площадь и размеры сфероид. трапеции.html" class="hover:text-white transition-colors">Площадь и размеры рамок сфероидической трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Дипломный проект, СГУГиТ.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleFaq(header) {
+            const item = header.parentElement;
+            const answer = item.querySelector('.faq-answer');
+            const isOpen = item.classList.contains('open');
+            
+            // Close all other items in the same category
+            const category = item.closest('.faq-category');
+            category.querySelectorAll('.faq-item.open').forEach(openItem => {
+                if (openItem !== item) {
+                    openItem.classList.remove('open');
+                    openItem.querySelector('.faq-answer').style.maxHeight = null;
+                }
+            });
+
+            // Toggle current
+            if (isOpen) {
+                item.classList.remove('open');
+                answer.style.maxHeight = null;
+            } else {
+                item.classList.add('open');
+                answer.style.maxHeight = answer.scrollHeight + "px";
+            }
+        }
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const categories = document.querySelectorAll('.faq-category');
+            let hasVisibleResults = false;
+            
+            categories.forEach(category => {
+                const items = category.querySelectorAll('.faq-item');
+                let categoryHasVisible = false;
+                
+                items.forEach(item => {
+                    const searchText = item.dataset.search || '';
+                    const question = item.querySelector('.faq-question').textContent.toLowerCase();
+                    const answer = item.querySelector('.faq-answer-inner').textContent.toLowerCase();
+                    const fullText = searchText + ' ' + question + ' ' + answer;
+                    
+                    if (query === '' || fullText.includes(query)) {
+                        item.style.display = '';
+                        categoryHasVisible = true;
+                    } else {
+                        item.style.display = 'none';
+                        item.classList.remove('open');
+                        item.querySelector('.faq-answer').style.maxHeight = null;
+                    }
+                });
+                
+                category.style.display = categoryHasVisible ? '' : 'none';
+                if (categoryHasVisible) hasVisibleResults = true;
+            });
+            
+            // Show/hide no results message
+            let noResults = document.getElementById('noResults');
+            if (!hasVisibleResults && query !== '') {
+                if (!noResults) {
+                    noResults = document.createElement('div');
+                    noResults.id = 'noResults';
+                    noResults.className = 'text-center py-12 text-slate-400';
+                    noResults.innerHTML = '<i data-lucide="search-x" class="w-12 h-12 mx-auto mb-3 opacity-50"></i><p class="text-lg font-medium">Ничего не найдено</p><p class="text-sm mt-1">Попробуйте изменить поисковый запрос</p>';
+                    document.querySelector('main .max-w-4xl').appendChild(noResults);
+                    lucide.createIcons();
+                }
+            } else if (noResults) {
+                noResults.remove();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

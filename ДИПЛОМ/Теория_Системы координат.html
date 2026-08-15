@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Системы координат и их классификация | GEOPOINT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/300.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/500.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/700.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/800.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "geo-orange": "#FF6B31",
+                        "geo-orange-dark": "#EA580C",
+                        "geo-blue": "#3166FF",
+                        "geo-light": "#EFF6FF"
+                    },
+                    fontFamily: { inter: ["Inter", "sans-serif"] }
+                }
+            }
+        };
+    </script>
+    <style>
+        :root { --ring: rgba(49, 102, 255, 0.2); }
+        body {
+            font-family: "Inter", sans-serif;
+            background: #FDF8F5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            color: #0f172a;
+        }
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #3166FF;
+            border-radius: 9999px;
+        }
+        .nav-link { color: #1E293B; transition: all .2s ease; cursor: pointer; font-size: 1.05rem; }
+        .nav-link:hover { color: #3166FF; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            opacity: 0.85;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .back-link:hover { opacity: 1; gap: 12px; }
+        .back-link .back-icon { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .back-link:hover .back-icon { transform: translateX(-3px); }
+        .hero-title { letter-spacing: .01em; }
+        .section-title { font-size: 1.75rem; font-weight: 800; line-height: 1.2; }
+        .glass-card { background: #fff; border: 1px solid #edf1f7; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08); }
+        .expandable-section {
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            background: #fff;
+            transition: all .3s ease;
+            margin-bottom: 1.5rem;
+        }
+        .expandable-section.open { box-shadow: 0 8px 24px rgba(255,107,49,0.08); border-color: #FED7AA; }
+        .expandable-header {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            padding: 1.75rem 2rem;
+            cursor: pointer;
+            transition: background .2s;
+            user-select: none;
+        }
+        .expandable-header:hover { background: #FFF7ED; }
+        .expandable-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .expandable-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); color: #fff; }
+        .expandable-icon.blue { background: linear-gradient(135deg, #3166FF, #1E40AF); color: #fff; }
+        .expandable-icon.green { background: linear-gradient(135deg, #10B981, #059669); color: #fff; }
+        .expandable-icon.purple { background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: #fff; }
+        .expandable-icon.rose { background: linear-gradient(135deg, #F43F5E, #E11D48); color: #fff; }
+        .expandable-title { font-weight: 700; font-size: 1.2rem; color: #0f172a; }
+        .expandable-subtitle { font-size: 0.95rem; color: #64748B; margin-top: 0.25rem; }
+        .expandable-arrow {
+            margin-left: auto;
+            transition: transform .3s ease;
+            color: #94A3B8;
+        }
+        .expandable-section.open .expandable-arrow { transform: rotate(180deg); color: #FF6B31; }
+        .expandable-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .5s ease;
+        }
+        .expandable-section.open .expandable-body { max-height: 10000px; }
+        .expandable-body-inner { padding: 0 2rem 2rem; }
+        .info-note {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1rem 1.25rem;
+            background: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            border-radius: 1rem;
+            margin-top: 1rem;
+        }
+        .info-note svg { color: #10B981; flex-shrink: 0; margin-top: 2px; }
+        .info-note p { font-size: 0.95rem; color: #374151; line-height: 1.6; }
+        .figure-card {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .figure-caption {
+            font-size: 0.9rem;
+            color: #475569;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+        .formula-card {
+            background: #fff;
+            border: 1px solid #E8ECF0;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow-x: auto;
+        }
+        .formula-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #3166FF;
+            margin-bottom: 1.25rem;
+        }
+        .formula-line {
+            display: block;
+            padding: 0.25rem 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.2rem;
+            color: #1e293b;
+            text-align: center;
+        }
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 0.25rem;
+            font-size: 0.9em;
+        }
+        .frac > span { display: block; padding: 0.1em 0.3em; text-align: center; }
+        .frac span.bottom { border-top: 1.5px solid #1e293b; }
+        .sqrt { border-top: 1.5px solid #1e293b; padding-left: 3px; margin-left: 3px; }
+        .math-group { display: inline; white-space: normal; }
+        sup, sub { font-size: 0.75em; }
+        .figure-box {
+            background: #fff;
+            border: 1px solid #E2E8F0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .figure-box img { width: 100%; max-width: 520px; height: auto; margin: 0 auto; }
+        .denotations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .denotation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #F8FAFC;
+            border-radius: 0.75rem;
+            border: 1px solid #E2E8F0;
+        }
+        .denotation-symbol {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #3166FF;
+            min-width: 40px;
+            text-align: center;
+            padding-top: .1rem;
+            font-family: 'Times New Roman', serif;
+        }
+        .denotation-text {
+            font-size: 0.85rem;
+            color: #475569;
+            line-height: 1.4;
+        }
+        .denotation-text strong { color: #0f172a; }
+        .classification-tree {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 2rem 0;
+        }
+        .tree-node {
+            background: #fff;
+            border: 2px solid #3166FF;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: center;
+            position: relative;
+        }
+        .tree-node.primary {
+            background: linear-gradient(135deg, #3166FF, #1E40AF);
+            color: #fff;
+            border-color: #1E40AF;
+        }
+        .tree-node.secondary {
+            background: linear-gradient(135deg, #FF6B31, #EA580C);
+            color: #fff;
+            border-color: #EA580C;
+        }
+        .tree-branch {
+            width: 2px;
+            height: 30px;
+            background: #CBD5E1;
+        }
+        .tree-branches {
+            display: flex;
+            gap: 2rem;
+            position: relative;
+        }
+        .tree-branches::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 25%;
+            right: 25%;
+            height: 2px;
+            background: #CBD5E1;
+        }
+        .tree-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sys-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        .sys-table th, .sys-table td {
+            padding: 0.75rem 1rem;
+            border: 1px solid #E2E8F0;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        .sys-table th {
+            background: #F8FAFC;
+            font-weight: 700;
+            color: #475569;
+        }
+        .sys-table td { color: #334155; }
+        @media (max-width: 768px) {
+            .expandable-header { padding: 1.25rem 1.5rem; }
+            .expandable-body-inner { padding: 0 1.5rem 1.5rem; }
+            .denotations-grid { grid-template-columns: 1fr; }
+        }
+        .logo-home { text-decoration: none; }
+        .logo-text { font-weight: 800; font-size: 1.5rem; letter-spacing: -0.02em; }
+        .logo-geo { color: #FF6B31; }
+        .logo-point { color: #3166FF; }
+        .classification-diagram { width: 100%; max-width: 880px; height: auto; margin: 0 auto; display: block; }
+        .figure-card { overflow-x: auto; }
+        .theory-nav {
+            background: #fff;
+            border: 1px solid #E2E8F0;
+            border-radius: 1.25rem;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 8px 24px rgba(49, 102, 255, 0.06);
+        }
+        .theory-nav-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.35rem;
+        }
+        .theory-nav-subtitle {
+            font-size: 0.95rem;
+            color: #64748B;
+            margin-bottom: 1.25rem;
+        }
+        .theory-nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+        .theory-nav-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            border-radius: 0.875rem;
+            border: 2px solid #3166FF;
+            background: #EFF6FF;
+            color: #1E40AF;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .theory-nav-btn:hover {
+            background: #3166FF;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(49, 102, 255, 0.25);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="fixed w-full top-0 z-50 pt-4 px-4">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-8 py-4 flex justify-between items-center shadow-lg">
+                <a href="index.html" class="flex items-center gap-2">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="Главная страница.html" class="nav-link text-base font-semibold">Главная</a>
+                    <a href="Главная страница.html#calculators" class="nav-link text-base font-semibold">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link nav-link-active text-base font-semibold">Теория</a>
+                    <a href="О проекте.html" class="nav-link text-base font-semibold">О проекте</a>
+                    <a href="Справка.html" class="nav-link text-base font-semibold">Справка</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-4">
+        <div class="max-w-6xl mx-auto pt-0 pb-6">
+            <!-- HERO -->
+            <div class="bg-geo-blue rounded-3xl p-8 mb-8 text-white shadow-lg">
+                <a href="Теория.html" class="back-link mb-6">
+                    <i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i>
+                    НАЗАД К ТЕМАМ
+                </a>
+                <h1 class="hero-title section-title mb-3">СИСТЕМЫ КООРДИНАТ И ИХ КЛАССИФИКАЦИЯ</h1>
+                <p class="text-blue-100 text-[1.1rem] max-w-6xl leading-relaxed">Обзор основных систем координат: пространственные прямоугольные, геодезические и плоские прямоугольные.<br> Их взаимосвязь и области применения.</p>
+            </div>
+
+            <!-- Section 1: Introduction -->
+            <div class="expandable-section open">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon orange">
+                        <i data-lucide="info" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">ОБЩИЕ СВЕДЕНИЯ О СИСТЕМАХ КООРДИНАТ</div>
+                        <div class="expandable-subtitle">Определение, назначение и классификация</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            Для решения различных задач, связанных с осуществлением хозяйственной деятельности на территории государства или его субъектов, приходится использовать разные системы координат. Каждая из систем координат имеет свои достоинства и недостатки, которые делают удобным или неудобным использование той или иной системы.
+                        </p>
+
+                        <div class="figure-card">
+                            <svg viewBox="0 0 980 300" class="classification-diagram" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="">
+                                <text x="490" y="28" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" font-weight="700" fill="#1E293B">Классификация систем координат в геодезии</text>
+
+                                <!-- Root -->
+                                <rect x="390" y="44" width="200" height="44" rx="8" fill="#3166FF" stroke="#1E40AF" stroke-width="2"/>
+                                <text x="490" y="71" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#fff">Системы координат</text>
+
+                                <line x1="490" y1="88" x2="490" y2="104" stroke="#CBD5E1" stroke-width="2"/>
+                                <line x1="120" y1="104" x2="840" y2="104" stroke="#CBD5E1" stroke-width="2"/>
+
+                                <!-- Branch 1: Geodetic -->
+                                <line x1="120" y1="104" x2="120" y2="124" stroke="#CBD5E1" stroke-width="2"/>
+                                <rect x="20" y="124" width="200" height="42" rx="8" fill="#FF6B31" stroke="#EA580C" stroke-width="2"/>
+                                <text x="120" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#fff">Геодезические (B, L, H)</text>
+                                <line x1="120" y1="166" x2="120" y2="186" stroke="#CBD5E1" stroke-width="2"/>
+                                <line x1="52" y1="186" x2="188" y2="186" stroke="#CBD5E1" stroke-width="2"/>
+                                <line x1="52" y1="186" x2="52" y2="206" stroke="#CBD5E1" stroke-width="2"/>
+                                <rect x="0" y="206" width="104" height="36" rx="6" fill="#fff" stroke="#3166FF" stroke-width="2"/>
+                                <text x="52" y="228" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#3166FF">Государственные</text>
+                                <line x1="188" y1="186" x2="188" y2="206" stroke="#CBD5E1" stroke-width="2"/>
+                                <rect x="136" y="206" width="104" height="36" rx="6" fill="#fff" stroke="#3166FF" stroke-width="2"/>
+                                <text x="188" y="228" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#3166FF">Общеземные</text>
+
+                                <!-- Branch 2: Spatial -->
+                                <line x1="480" y1="104" x2="480" y2="124" stroke="#CBD5E1" stroke-width="2"/>
+                                <rect x="370" y="124" width="220" height="42" rx="8" fill="#FF6B31" stroke="#EA580C" stroke-width="2"/>
+                                <text x="480" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#fff">Пространственные (X, Y, Z)</text>
+                                <line x1="480" y1="166" x2="480" y2="186" stroke="#CBD5E1" stroke-width="2"/>
+                                <line x1="412" y1="186" x2="548" y2="186" stroke="#CBD5E1" stroke-width="2"/>
+                                <line x1="412" y1="186" x2="412" y2="206" stroke="#CBD5E1" stroke-width="2"/>
+                                <rect x="350" y="206" width="124" height="36" rx="6" fill="#fff" stroke="#3166FF" stroke-width="2"/>
+                                <text x="412" y="228" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#3166FF">Геоцентрические</text>
+                                <line x1="548" y1="186" x2="548" y2="206" stroke="#CBD5E1" stroke-width="2"/>
+                                <rect x="486" y="206" width="124" height="36" rx="6" fill="#fff" stroke="#3166FF" stroke-width="2"/>
+                                <text x="548" y="228" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#3166FF">Референцные</text>
+
+                                <!-- Branch 3: Plane -->
+                                <line x1="840" y1="104" x2="840" y2="124" stroke="#CBD5E1" stroke-width="2"/>
+                                <rect x="750" y="124" width="180" height="42" rx="8" fill="#FF6B31" stroke="#EA580C" stroke-width="2"/>
+                                <text x="840" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#fff">Плоские (x, y)</text>
+                                <line x1="840" y1="166" x2="840" y2="186" stroke="#CBD5E1" stroke-width="2"/>
+                                <line x1="748" y1="186" x2="880" y2="186" stroke="#CBD5E1" stroke-width="2"/>
+                                <line x1="748" y1="186" x2="748" y2="206" stroke="#CBD5E1" stroke-width="2"/>
+                                <rect x="692" y="206" width="112" height="36" rx="6" fill="#fff" stroke="#3166FF" stroke-width="2"/>
+                                <text x="748" y="228" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#3166FF">Государственные</text>
+                                <line x1="880" y1="186" x2="880" y2="206" stroke="#CBD5E1" stroke-width="2"/>
+                                <rect x="824" y="206" width="112" height="36" rx="6" fill="#fff" stroke="#3166FF" stroke-width="2"/>
+                                <text x="880" y="228" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#3166FF">Местные (СКМ)</text>
+
+                            </svg>
+                            <div class="figure-caption">Рис. 1. Классификация систем координат в геодезии</div>
+                        </div>
+
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            Международная служба вращения Земли (IERS) различает <strong>теоретические системы координат</strong> (Terrestrial Reference System — TRS) и их <strong>практическую реализацию</strong> (Terrestrial Reference Frame — TRF). Теоретическая система опирается на фундаментальную физическую теорию; реализация — на набор пунктов геодезической сети с координатами, полученными в данной системе отсчёта на определённую эпоху.
+                        </p>
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            За координатную поверхность в геодезии принимают <strong>земной эллипсоид</strong>. Измерения на физической поверхности Земли <strong>редуцируют</strong> на эту поверхность или на плоскость геодезической проекции. Основные группы систем: геодезические пространственные (B, L, H), пространственные прямоугольные (X, Y, Z), плоские прямоугольные (x, y).
+                        </p>
+
+                        <div class="info-note">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                            <p>Система координат — это набор математических правил, устанавливающих точкам пространства соответствующие значения координат. В геодезии используются преимущественно земные системы координат, связанные с нашей планетой и участвующие в её суточном вращении вокруг своей оси.</p>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Geodetic Spatial Coordinates -->
+            <div class="expandable-section">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon blue">
+                        <i data-lucide="map-pin" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">СИСТЕМА ГЕОДЕЗИЧЕСКИХ ПРОСТРАНСТВЕННЫХ КООРДИНАТ</div>
+                        <div class="expandable-subtitle">Широта B, долгота L и высота H</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            В системе геодезических пространственных координат положение любой точки пространства можно задать тремя координатами: <strong>геодезической широтой B</strong>, <strong>геодезической долготой L</strong> и <strong>геодезической высотой H</strong>.
+                        </p>
+
+                        <figure class="figure-box">
+                            <img src="assets/geodetic-BLH.svg" alt="Геодезические пространственные координаты B, L, H" width="520" height="472" loading="lazy">
+                            <figcaption class="figure-caption">Рис. 2 — Геодезические координаты: широта B, долгота L, высота H над эллипсоидом</figcaption>
+                        </figure>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3">Определения основных элементов</h3>
+                        
+                        <div class="space-y-3 mb-4">
+                            <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <span class="text-blue-700 font-bold text-lg" style="font-family: 'Times New Roman', serif;">B</span>
+                                </div>
+                                <div>
+                                    <strong class="text-slate-900">Геодезическая широта B</strong>
+                                    <p class="text-sm text-slate-600 mt-1">Острый угол, образованный нормалью к поверхности эллипсоида вращения и плоскостью его экватора. Изменяется от 0° на экваторе до 90° на полюсах. Различают северные и южные широты.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <span class="text-purple-700 font-bold text-lg" style="font-family: 'Times New Roman', serif;">L</span>
+                                </div>
+                                <div>
+                                    <strong class="text-slate-900">Геодезическая долгота L</strong>
+                                    <p class="text-sm text-slate-600 mt-1">Двугранный угол между плоскостями начального (Гринвичского) меридиана и плоскотью геодезического меридиана проходящего через заданную точку. Изменяется от 0 до 360° или от 0 до 180° на восток и запад от гринвичского меридиана.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <span class="text-green-700 font-bold text-lg" style="font-family: 'Times New Roman', serif;">H</span>
+                                </div>
+                                <div>
+                                    <strong class="text-slate-900">Геодезическая высота H</strong>
+                                    <p class="text-sm text-slate-600 mt-1">Отрезок нормали к поверхности эллипсоида вращения, заключённый между этой поверхностью и заданной точкой. Обычно положительна, но может быть отрицательной (в шахтах, карьерах).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3">Достоинства системы (B, L, H)</h3>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+                            <li>Едина для всей поверхности Земли и позволяет однозначно определять положение любой точки пространства.</li>
+                            <li>Координатные линии — геодезические меридианы и параллели — являются основными линиями в любой картографической проекции.</li>
+                            <li>Геодезические широта и долгота определяют положение нормали к поверхности эллипсоида, что используется при определении уклонений отвесных линий.</li>
+                            <li>Геодезическая широта и долгота точек одинаковы, а высоты разные.</li>
+                            <li>Поправки (редукции) за переход с физической поверхности Земли на эллипсоид обычно незначительны.</li>
+                        </ul>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3">Недостатки системы (B, L, H)</h3>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+                            <li>Вычисление широт и долгот затруднено, так как решение прямых и обратных геодезических задач выполняется по сложным громоздким формулам.</li>
+                            <li>При использовании ГНСС-технологий поправки за редукцию на поверхность эллипсоида становятся соизмеримыми с самими измерениями, что делает применение этой системы неудобным.</li>
+                        </ul>
+
+                       
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Spatial Rectangular Coordinates -->
+            <div class="expandable-section">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon green">
+                        <i data-lucide="box" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">СИСТЕМА ПРОСТРАНСТВЕННЫХ ПРЯМОУГОЛЬНЫХ КООРДИНАТ</div>
+                        <div class="expandable-subtitle">Координаты X, Y, Z</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            За начало координат принимается <strong>центр эллипсоида</strong> O. Ось <strong>OZ</strong> направлена вдоль полярной оси на северный полюс, ось <strong>OX</strong> лежит в плоскости гринвичского меридиана и экватора, ось <strong>OY</strong> дополняет систему до правой (рис. 3.1). Такая система является <strong>геоцентрической</strong> и используется при обработке данных ГНСС.
+                        </p>
+
+                        <figure class="figure-box">
+                            <img src="assets/spatial-XYZ.svg" alt="Пространственные прямоугольные координаты X, Y, Z" width="520" height="496" loading="lazy">
+                            <figcaption class="figure-caption">Рис. 3 — пространственные прямоугольные координаты X, Y, Z</figcaption>
+                        </figure>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3">Положение точки в системе (X, Y, Z)</h3>
+                        <div class="denotations-grid">
+                            <div class="denotation-item">
+                                <div class="denotation-symbol">O</div>
+                                <div class="denotation-text"><strong>Начало координат</strong> — центр эллипсоида; пересечение осей OX, OY и OZ.</div>
+                            </div>
+                            <div class="denotation-item">
+                                <div class="denotation-symbol">Q</div>
+                                <div class="denotation-text"><strong>Заданная точка</strong> в пространстве, положение которой определяется координатами X, Y, Z.</div>
+                            </div>
+                            <div class="denotation-item">
+                                <div class="denotation-symbol">X</div>
+                                <div class="denotation-text"><strong>Абсцисса</strong> — координата точки Q по оси OX; откладывается от начала координат параллельно оси OX (в плоскости гринвичского меридиана и экватора) до плоскости YOZ.</div>
+                            </div>
+                            <div class="denotation-item">
+                                <div class="denotation-symbol">Y</div>
+                                <div class="denotation-text"><strong>Ордината</strong> — координата точки Q по оси OY; откладывается от начала координат параллельно оси OY (направлена на запад) до плоскости XOZ.</div>
+                            </div>
+                            <div class="denotation-item">
+                                <div class="denotation-symbol">Z</div>
+                                <div class="denotation-text"><strong>Аппликата</strong> — координата точки Q по оси OZ; откладывается от начала координат параллельно полярной оси (на северный полюс) до плоскости XOY.</div>
+                            </div>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-4">Достоинства системы (X, Y, Z)</h3>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+                            <li>Однозначное определение положения любой точки пространства.</li>
+                            <li>Не требуется иметь поверхность относимости (поверхность эллипсоида вращения).</li>
+                            <li>Отсутствует необходимость в редуцировании результатов полевых измерений на поверхность относимости — практически незаменима при обработке спутниковых измерений.</li>
+                        </ul>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3">Недостатки системы (X, Y, Z)</h3>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+                            <li>Нельзя уменьшить размерность задач — необходимо сразу выполнить достаточное количество измерений для вычисления всех трёх координат.</li>
+                            <li>Неудобно использовать в топографии, землеустройстве и кадастре.</li>
+                            <li>Отсутствуют строгие формулы для прямого перехода от (X, Y, Z) к плоским координатам Гаусса–Крюгера (x, y).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Gauss-Krüger Plane Coordinates -->
+            <div class="expandable-section">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon purple">
+                        <i data-lucide="grid" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">СИСТЕМА ПЛОСКИХ ПРЯМОУГОЛЬНЫХ КООРДИНАТ ГАУССА–КРЮГЕРА</div>
+                        <div class="expandable-subtitle">Координаты x, y — проекция эллипсоида на плоскость</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            При производстве массовых топографо-геодезических работ (топографические и кадастровые съёмки, геодезическое обеспечение проектирования и строительства) наибольшее применение находит система <strong>плоских прямоугольных координат</strong>. На территории России используется <strong>проекция Гаусса–Крюгера</strong> — равноугольная (конформная) проекция эллипсоида на плоскость.
+                        </p>
+
+                        <figure class="figure-box">
+                            <img src="assets/x,y.svg" alt="Плоские прямоугольные координаты x, y в проекции Гаусса–Крюгера" width="640" height="429" loading="lazy" style="max-width: 640px;">
+                            <figcaption class="figure-caption">Рис. 4 — плоские прямоугольные координаты (x, y) и зонирование проекции Гаусса–Крюгера</figcaption>
+                        </figure>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3">Зонирование в проекции Гаусса–Крюгера</h3>
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            В проекции Гаусса–Крюгера поверхность эллипсоида вращения делится на <strong>зоны</strong> геодезическими меридианами. В России установлены размеры зон в <strong>шесть</strong> и <strong>три градуса</strong> по долготе. Шестиградусные зоны считаются основными — в них выполняется математическая обработка результатов измерений и оформление материалов топосъёмок. Трёхградусные зоны используются при производстве крупномасштабного картографирования (масштабов 1:5 000 и крупнее).
+                        </p>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Долготы осевых меридианов зон (проекция Гаусса–Крюгера)</div>
+                            <div class="formula-line">L₀⁽⁶⁾ = 6n − 3 &nbsp;&nbsp;(шестиградусные зоны)</div>
+                            <div class="formula-line">L₀⁽³⁾ = 3n′ &nbsp;&nbsp;(трёхградусные зоны)</div>
+                            <div style="margin-top: 0.75rem; font-size: 0.85rem; color: #64748B; text-align: center;">
+                                n, n′ — номера зон на восток от Гринвичского меридиана
+                            </div>
+                        </div>
+
+
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-4">Условные координаты</h3>
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            Для исключения отрицательных ординат и для указания зоны в каталогах координат помещают <strong>условные координаты</strong>:
+                        </p>
+                        <div class="formula-card">
+                            <div class="formula-line">x' = x</div>
+                            <div class="formula-line">y' = n · 10⁶ + 5 · 10⁵ + y</div>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-4">Достоинства системы (x, y)</h3>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+                            <li>Отсутствие угловых искажений (равноугольность проекции).</li>
+                            <li>Зоны совершенно одинаковы — формулы не зависят от номера зоны.</li>
+                            <li>Пара координат (x, y) однозначно определяет положение точки внутри одной зоны.</li>
+                            <li>Значительно упрощает решение задач геодезии, топографии и землеустройства.</li>
+                        </ul>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3">Недостатки системы (x, y)</h3>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+                            <li>Трудности при обработке на объектах, вытянутых вдоль параллели и расположенных в нескольких зонах.</li>
+                            <li>Действительные координаты не дают представления о местоположении точки на Земле (она может быть в любой из 60 шестиградусных зон).</li>
+                        </ul>
+
+                        <div class="info-note">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                            <p>При развёртывании поверхности эллипсоида на плоскости только <strong>осевые меридианы</strong> зон и <strong>экватор</strong> изображаются прямыми линиями. Все остальные кривые поверхности эллипсоида (граничные меридианы, параллели и др.) остаются кривыми линиями.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: State and Earth-centered Systems -->
+            <div class="expandable-section">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon blue">
+                        <i data-lucide="flag" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">ГОСУДАРСТВЕННЫЕ И ОБЩЕЗЕМНЫЕ СИСТЕМЫ КООРДИНАТ</div>
+                        <div class="expandable-subtitle">СК-42, СК-95, ГСК-2011, ПЗ-90.11, WGS-84</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            Системы координат делятся на <strong>общеземные</strong> и <strong>государственные (референцные)</strong>. Общеземные системы охватывают всю поверхность Земли и привязаны к её центру масс; государственные — к территории отдельного государства и используют референц-эллипсоид, согласованный с физической поверхностью данной страны.
+                        </p>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3">Общеземные системы координат</h3>
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            Общеземные системы являются <strong>геоцентрическими</strong>: начало координат совпадает с центром масс Земли, ось Z направлена на полюс, ось X — в плоскости гринвичского меридиана и экватора. Они применяются в спутниковой геодезии, навигации и международном обмене данными.
+                        </p>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+                            <li><strong>WGS-84</strong> — мировая геодезическая система, используемая GPS и большинством международных сервисов (с 1987 г.).</li>
+                            <li><strong>ПЗ-90.11</strong> — общеземная система координат ГЛОНАСС, обновлённая версия ПЗ-90 (с 2017 г.).</li>
+                            <li><strong>ITRF</strong> — международная земная референцная система, реализуемая через наборы ITRF с привязкой к эпохе.</li>
+                        </ul>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3">Государственные системы координат Российской Федерации</h3>
+                        <p class="text-slate-600 leading-relaxed mb-4">
+                            Государственные системы координат РФ являются <strong>референцными</strong>: их начало и ориентация осей выбраны так, чтобы обеспечить наилучшее согласование с физической поверхностью территории страны.
+                        </p>
+
+                        <table class="sys-table">
+                            <thead>
+                                <tr>
+                                    <th>Система</th>
+                                    <th>Назначение</th>
+                                    <th>Год ввода</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>СК-42</strong></td>
+                                    <td>Плановые и высотные работы (историческая)</td>
+                                    <td>1946</td>
+                                    <td>Заменена СК-95</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>СК-95</strong></td>
+                                    <td>Плановые и высотные работы</td>
+                                    <td>2002</td>
+                                    <td>Действующая (референцная)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ГСК-2011</strong></td>
+                                    <td>Геоцентрическая система для ГНСС и кадастра</td>
+                                    <td>2017</td>
+                                    <td>Действующая (основная)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p class="text-slate-600 leading-relaxed mb-4 mt-4">
+                            <strong>СК-42</strong> и <strong>СК-95</strong> — классические референцные системы с началом, смещённым относительно центра Земли; координаты в них задаются в виде геодезических (B, L, H) и плоских (x, y) координат. <strong>ГСК-2011</strong> — современная геоцентрическая система, согласованная с ITRF; предназначена для спутниковых определений, цифрового картографирования и единого пространства данных.
+                        </p>
+
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theory navigation: coordinate transformations -->
+            <div class="theory-nav">
+                <div class="theory-nav-title">Преобразование координат</div>
+                <div class="theory-nav-subtitle">Подробные формулы и алгоритмы — в отдельных разделах теории</div>
+                <div class="theory-nav-grid">
+                    <a href="Теория XYZ-BLH.html" class="theory-nav-btn">
+                        <span>Из XYZ в BLH</span>
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </a>
+                    <a href="Теория BLH-Гаусс-Крюгер.html" class="theory-nav-btn">
+                        <span>Из BLH в xy</span>
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </a>
+                    <a href="Теория Гаусс-Крюгер-BLH.html" class="theory-nav-btn">
+                        <span>Из xy в BLH</span>
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </a>
+                    <a href="Теория BLH-XYZ.html" class="theory-nav-btn">
+                        <span>Из BLH в XYZ</span>
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white pt-20 pb-10" id="site-footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html" class="logo-home inline-block">
+                        <span class="logo-text text-2xl">
+                            <span class="logo-geo">GEO</span><span class="logo-point">POINT</span>
+                        </span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах СК-42, СК-95, ПЗ-90.11, ГСК-2011 и WGS-84. Точность, скорость и удобство.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.html" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Прямая задача.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="Обратная задача.html" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="Преобразование координат.html" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="Площадь и размеры сфероид. трапеции.HTML" class="hover:text-white transition-colors">Площадь и размеры рамок трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Все права защищены.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleSection(header) {
+            const section = header.closest('.expandable-section');
+            const isOpen = section.classList.contains('open');
+            const container = section.parentElement;
+            container.querySelectorAll('.expandable-section.open').forEach(openSection => {
+                if (openSection !== section) openSection.classList.remove('open');
+            });
+            section.classList.toggle('open', !isOpen);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
+

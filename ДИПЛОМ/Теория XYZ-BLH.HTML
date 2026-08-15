@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вычисление геодезических координат | GEOPOINT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/300.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/500.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/700.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/800.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "geo-orange": "#FF6B31",
+                        "geo-orange-dark": "#EA580C",
+                        "geo-blue": "#3166FF",
+                        "geo-light": "#EFF6FF"
+                    },
+                    fontFamily: { inter: ["Inter", "sans-serif"] }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background: #FDF8F5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            color: #0f172a;
+            font-size: 1.05rem;
+        }
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #3166FF;
+            border-radius: 9999px;
+        }
+        .nav-link { color: #1E293B; transition: all .2s ease; cursor: pointer; font-size: 1.05rem; }
+        .nav-link:hover { color: #3166FF; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            opacity: 0.85;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .back-link:hover { opacity: 1; gap: 12px; }
+        .back-link .back-icon { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .back-link:hover .back-icon { transform: translateX(-3px); }
+        .hero-title { letter-spacing: .01em; }
+        .section-title { font-size: 1.75rem; font-weight: 800; line-height: 1.2; }
+        .glass-card { background: #fff; border: 1px solid #edf1f7; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08); }
+        .section-heading-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #fff;
+        }
+        .section-heading-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); }
+        .section-heading-icon.blue { background: linear-gradient(135deg, #3166FF, #1E40AF); }
+        .section-heading-icon.green { background: linear-gradient(135deg, #10B981, #059669); }
+        .section-heading-icon.purple { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+        .info-note {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1.25rem 1.5rem;
+            border-radius: 1rem;
+            margin-top: 1.5rem;
+        }
+        .info-note svg { flex-shrink: 0; margin-top: 2px; }
+        .info-note p { font-size: 0.95rem; color: #374151; line-height: 1.6; }
+        .info-note.green { background: #F0FDF4; border: 1px solid #BBF7D0; }
+        .info-note.green svg { color: #10B981; }
+        .info-note.blue { background: #EFF6FF; border: 1px solid #BFDBFE; }
+        .info-note.blue svg { color: #3166FF; }
+        .info-note.warn { background: #FFF7ED; border: 1px solid #FED7AA; }
+        .info-note.warn svg { color: #FF6B31; }
+        .formula-card {
+            background: #fff;
+            border: 1px solid #E8ECF0;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow-x: auto;
+        }
+        .formula-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #3166FF;
+            margin-bottom: 1.25rem;
+        }
+        .formula-line {
+            display: block;
+            padding: 0.25rem 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.25rem;
+            color: #1e293b;
+            text-align: center;
+        }
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 0.25em;
+            font-size: 0.9em;
+        }
+        .frac > span { display: block; padding: 0.15em 0.3em; text-align: center; }
+        .frac span.bottom { border-top: 1.5px solid #1e293b; }
+        .sqrt {
+            border-top: 1.5px solid #1e293b;
+            padding-left: 3px;
+            margin-left: 3px;
+        }
+        sup, sub { font-size: 0.75em; }
+        .step-list {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+            counter-reset: step;
+        }
+        .step-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.25rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.95rem;
+            color: #334155;
+            line-height: 1.55;
+        }
+        .step-list li:last-child { border-bottom: none; }
+        .step-list li::before {
+            content: counter(step);
+            counter-increment: step;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3166FF;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .figure-img {
+            width: 100%;
+            max-width: min(560px, 90vw);
+            height: auto;
+        }
+        .figure-legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        .figure-legend-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #F8FAFC;
+            border-radius: 0.75rem;
+            border: 1px solid #E2E8F0;
+        }
+        .figure-legend-symbol {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #3166FF;
+            min-width: 36px;
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+        }
+        .figure-legend-text { font-size: 0.85rem; color: #475569; line-height: 1.4; }
+        .figure-legend-text strong { color: #0f172a; }
+        .case-box {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid;
+        }
+        .case-box.blue { background: #EFF6FF; border-color: #BFDBFE; }
+        .case-box.green { background: #F0FDF4; border-color: #BBF7D0; }
+        .case-box.orange { background: #FFF7ED; border-color: #FED7AA; }
+        .denotations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .denotation-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .denotation-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #FF6B31;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-family: 'Times New Roman', serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(255, 107, 49, 0.3);
+        }
+        .denotation-icon.blue-icon { background: #3166FF; box-shadow: 0 4px 10px rgba(49,102,255,0.3); }
+        .denotation-icon.green-icon { background: #10B981; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+        .denotation-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0f172a;
+            margin-bottom: 0.2rem;
+        }
+        .denotation-text {
+            font-size: 0.85rem;
+            color: #64748B;
+            line-height: 1.4;
+        }
+        .related-link {
+            display: block;
+            padding: 1rem 1.25rem;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.75rem;
+            transition: all .2s ease;
+            text-decoration: none;
+        }
+        .related-link:hover { background: #EFF6FF; border-color: #BFDBFE; }
+        .expandable-section {
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            background: #fff;
+            transition: all .3s ease;
+        }
+        .expandable-section.open { box-shadow: 0 8px 24px rgba(255,107,49,0.08); border-color: #FED7AA; }
+        .expandable-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            transition: background .2s;
+            user-select: none;
+        }
+        .expandable-header:hover { background: #FFF7ED; }
+        .expandable-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .expandable-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); color: #fff; }
+        .expandable-title { font-weight: 700; font-size: 1rem; color: #0f172a; }
+        .expandable-subtitle { font-size: .8rem; color: #94A3B8; }
+        .expandable-arrow {
+            margin-left: auto;
+            transition: transform .3s ease;
+            color: #94A3B8;
+        }
+        .expandable-section.open .expandable-arrow { transform: rotate(180deg); color: #FF6B31; }
+        .expandable-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .4s ease;
+        }
+        .expandable-section.open .expandable-body { max-height: 10000px; }
+        .expandable-body-inner { padding: 0 1.5rem 1.5rem; }
+        @media (max-width: 640px) {
+            .section-title { font-size: 1.5rem; }
+            .denotations-grid, .figure-legend-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="fixed w-full top-0 z-50 pt-4 px-4">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-8 py-4 flex justify-between items-center shadow-lg">
+                <a href="index.html" class="flex items-center gap-2">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="Главная страница.html" class="nav-link text-base font-semibold">Главная</a>
+                    <a href="Главная страница.html#calculators" class="nav-link text-base font-semibold">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link nav-link-active text-base font-semibold">Теория</a>
+                    <a href="О проекте.html" class="nav-link text-base font-semibold">О проекте</a>
+                    <a href="Справка.html" class="nav-link text-base font-semibold">Справка</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-4">
+        <div class="max-w-6xl mx-auto pt-0 pb-6">
+            <div class="bg-geo-blue rounded-3xl p-8 mb-8 text-white shadow-lg">
+                <a href="Теория.html" class="back-link mb-6">
+                    <i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i>
+                    НАЗАД К ТЕМАМ
+                </a>
+                <h1 class="hero-title section-title max-w-6xl mb-4">ВЫЧИСЛЕНИЕ ГЕОДЕЗИЧЕСКИХ ПРОСТРАНСТВЕННЫХ КООРДИНАТ</h1>
+                <p class="text-blue-100 text-[1.1rem] max-w-6xl leading-relaxed">Обратное преобразование от прямоугольных пространственных координат (X, Y, Z) к геодезическим координатам (B, L, H) на поверхности референц-эллипсоида</p>
+            </div>
+
+            <!-- Введение -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon orange">
+                        <i data-lucide="book-open" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">ВВЕДЕНИЕ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Обратное преобразование координат</p>
+                    </div>
+                </div>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Обратное преобразование от пространственных прямоугольных координат <strong>X, Y, Z</strong> к геодезическим <strong>B, L, H</strong> является более сложной задачей по сравнению с прямым переходом, поскольку требует решения нелинейных уравнений относительно широты и высоты.
+                </p>
+                <p class="text-slate-600 leading-relaxed">
+                    В то время как прямые формулы позволяют вычислить X, Y, Z непосредственно, обратная задача решается итерационными методами. Наиболее распространённым является итерационный способ К.А. Лапинга, обеспечивающий быструю сходимость при заданной точности.
+                </p>
+            </div>
+
+            <!-- Геометрическая интерпретация -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon blue">
+                        <i data-lucide="eye" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">ГЕОМЕТРИЧЕСКАЯ ИНТЕРПРЕТАЦИЯ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Взаимосвязь систем координат в пространстве</p>
+                    </div>
+                </div>
+
+                <figure class="my-6 text-center bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                    <img src="assets/Связь геодезических и прямоугольных пространственных координат.svg" alt="Связь геодезических и прямоугольных пространственных координат" class="figure-img mx-auto" width="320" height="320" loading="lazy">
+                    <figcaption class="text-sm text-slate-500 mt-4">Рис. 1 — Связь геодезических и прямоугольных пространственных координат на поверхности земного эллипсоида</figcaption>
+                </figure>
+
+                <p class="text-xs font-bold uppercase tracking-wide text-slate-500 text-center mb-3">Обозначения на рисунке</p>
+                <div class="figure-legend-grid mb-6">
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">O</div>
+                        <div class="figure-legend-text"><strong>Начало координат</strong> — центр эллипсоида; пересечение осей OX, OY и OZ.</div>
+                    </div>
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">K</div>
+                        <div class="figure-legend-text"><strong>Заданная точка</strong> на поверхности эллипсоида.</div>
+                    </div>
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">B</div>
+                        <div class="figure-legend-text"><strong>Геодезическая широта</strong> — угол между плоскостью экватора и нормалью к эллипсоиду.</div>
+                    </div>
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">L</div>
+                        <div class="figure-legend-text"><strong>Геодезическая долгота</strong> — двугранный угол между плоскостями начального и данного меридианов.</div>
+                    </div>
+                    <div class="figure-legend-item">
+                        <div class="figure-legend-symbol">H</div>
+                        <div class="figure-legend-text"><strong>Геодезическая высота</strong> — отрезок нормали от поверхности эллипсоида до точки.</div>
+                    </div>
+                </div>
+
+                <div class="info-note blue" style="margin-top: 0;">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <p>Нормалью к поверхности в заданной точке является перпендикуляр к касательной плоскости в этой точке. Все точки, лежащие на одной нормали, имеют одинаковые геодезические широту и долготу, но различаются по высоте.</p>
+                </div>
+            </div>
+
+            <!-- Определение долготы -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon green">
+                        <i data-lucide="compass" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">ОПРЕДЕЛЕНИЕ ГЕОДЕЗИЧЕСКОЙ ДОЛГОТЫ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Прямая формула через тангенс долготы</p>
+                    </div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Геодезическая долгота <strong>L</strong> вычисляется непосредственно по формуле:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Формула определения долготы</div>
+                    <div class="formula-line">
+                        L = arctg <span class="frac"><span>Y</span><span class="bottom">X</span></span>
+                    </div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Для корректного определения долготы необходимо учитывать четверть расположения точки по знакам координат <strong>X</strong> и <strong>Y</strong>. Выделяются три основных случая:
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="case-box blue">
+                        <h4 class="font-bold text-blue-900 mb-2">Случай 1: X = 0</h4>
+                        <ul class="text-sm text-blue-800 space-y-1">
+                            <li>• Если Y = 0: долгота не определяется (полюс)</li>
+                            <li>• Если Y &gt; 0: L = 90°</li>
+                            <li>• Если Y &lt; 0: L = 270°</li>
+                        </ul>
+                    </div>
+                    <div class="case-box green">
+                        <h4 class="font-bold text-green-900 mb-2">Случай 2: X &gt; 0</h4>
+                        <ul class="text-sm text-green-800 space-y-1">
+                            <li>• Если Y ≥ 0: L = L′</li>
+                            <li>• Если Y &lt; 0: L = 360° − L′</li>
+                        </ul>
+                    </div>
+                    <div class="case-box orange">
+                        <h4 class="font-bold text-orange-900 mb-2">Случай 3: X &lt; 0</h4>
+                        <ul class="text-sm text-orange-800 space-y-1">
+                            <li>• Если Y ≥ 0: L = 180° − L′</li>
+                            <li>• Если Y &lt; 0: L = 180° + L′</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Итерационный способ Лапинга -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="section-heading-icon blue">
+                        <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">ИТЕРАЦИОННЫЙ СПОСОБ ЛАПИНГА</h2>
+                        <p class="text-sm text-slate-500 mt-1">Вычисление широты и высоты методом последовательных приближений</p>
+                    </div>
+                </div>
+
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Наиболее удачный итерационный способ решения задачи был предложен К.А. Лапингом на заре использования ИСЗ в геодезии. Метод основан на построении итерационного процесса для определения геодезической широты.
+                </p>
+
+                <h3 class="text-lg font-bold text-slate-900 mb-3">Начальное приближение</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Для получения начального значения широты B<sup>(1)</sup> временно предполагается, что геодезическая высота равна нулю:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Формула начального приближения широты</div>
+                    <div class="formula-line">
+                        tg B<sup>(1)</sup> = <span class="frac"><span>Z</span><span class="bottom">Q · (1 − e²)</span></span>
+                    </div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Вычисление расстояния Q</div>
+                    <div class="formula-line">
+                        Q = √<span class="sqrt">X² + Y²</span>
+                    </div>
+                </div>
+
+                <div class="info-note blue" style="margin-top: 0;">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <p>Рассмотрение формулы начального приближения указывает на существование двух особых случаев: <strong>при Z = 0</strong> точка находится в плоскости экватора и B = 0, H = Q − a; <strong>при Q = 0</strong> точка лежит на оси Z, B = ±90°, H = |Z| − b.</p>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-900 mb-3 mt-6">Итерационный процесс</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    В каждой итерации (i = 1, 2, 3, …) последовательно вычисляются следующие величины:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Первая сфероидическая функция</div>
+                    <div class="formula-line">W<sup>(i)</sup> = √<span class="sqrt">1 − e² · sin² B<sup>(i)</sup></span></div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Радиус кривизны первого вертикала</div>
+                    <div class="formula-line">N<sup>(i)</sup> = <span class="frac"><span>a</span><span class="bottom">W<sup>(i)</sup></span></span></div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Вспомогательная величина T</div>
+                    <div class="formula-line">T<sup>(i)</sup> = Z + e² · N<sup>(i)</sup> · sin B<sup>(i)</sup></div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Новое приближение широты</div>
+                    <div class="formula-line">tg B<sup>(i+1)</sup> = <span class="frac"><span>T<sup>(i)</sup></span><span class="bottom">Q</span></span></div>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-900 mb-3 mt-6">Критерий окончания</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    Итерационный процесс продолжается до достижения заданной точности сходимости:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Условие окончания</div>
+                    <div class="formula-line">|B<sup>(i+1)</sup> − B<sup>(i)</sup>| ≤ ε<sub>B</sub></div>
+                </div>
+
+                <div class="info-note warn">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <p>Величина ε<sub>B</sub> задаётся пользователем и обычно принимается равной 0,0001″. При выполнении условия геодезическая широта считается найденной.</p>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-900 mb-3 mt-6">Вычисление геодезической высоты</h3>
+                <p class="text-slate-600 mb-4 leading-relaxed">
+                    После нахождения широты геодезическую высоту можно вычислить одной из трёх формул:
+                </p>
+
+                <div class="formula-card">
+                    <div class="formula-title">Формула (1) — через Q</div>
+                    <div class="formula-line">H<sub>г</sub> = <span class="frac"><span>Q</span><span class="bottom">cos B</span></span> − N</div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Формула (2) — через Z</div>
+                    <div class="formula-line">H<sub>г</sub> = <span class="frac"><span>Z</span><span class="bottom">sin B</span></span> − N · (1 − e²)</div>
+                </div>
+
+                <div class="formula-card">
+                    <div class="formula-title">Формула (3) — универсальная</div>
+                    <div class="formula-line">H<sub>г</sub> = Q · cos B + Z · sin B − N · (1 − e² · sin² B)</div>
+                </div>
+
+                <div class="info-note green">
+                    <i data-lucide="lightbulb" class="w-5 h-5"></i>
+                    <p><strong>Рекомендация:</strong> предпочтительнее использовать универсальную формулу (3), так как она позволяет определить геодезическую высоту с меньшей погрешностью во всех точках пространства. На экваторе и полюсах погрешность равна погрешности пространственных координат, а на широте 45° она может достигать 1,33 · m<sub>X</sub>.</p>
+                </div>
+
+                <!-- Обозначения в формулах -->
+                <div class="expandable-section mb-0 mt-6">
+                    <div class="expandable-header" onclick="toggleSection(this)">
+                        <div class="expandable-icon orange">
+                            <i data-lucide="type" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="expandable-title">ОБОЗНАЧЕНИЯ В ФОРМУЛАХ</div>
+                            <div class="expandable-subtitle">Символы и параметры, используемые в формулах преобразования XYZ → BLH</div>
+                        </div>
+                        <i data-lucide="chevron-down" class="expandable-arrow w-5 h-5"></i>
+                    </div>
+                    <div class="expandable-body">
+                        <div class="expandable-body-inner">
+                            <div class="denotations-grid">
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">X</div>
+                                    <div>
+                                        <div class="denotation-title">Пространственная абсцисса</div>
+                                        <div class="denotation-text">Координата точки вдоль оси X (в метрах)</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon blue-icon">Y</div>
+                                    <div>
+                                        <div class="denotation-title">Пространственная ордината</div>
+                                        <div class="denotation-text">Координата точки вдоль оси Y (в метрах)</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon green-icon">Z</div>
+                                    <div>
+                                        <div class="denotation-title">Пространственная аппликата</div>
+                                        <div class="denotation-text">Координата точки вдоль оси Z (в метрах)</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">B</div>
+                                    <div>
+                                        <div class="denotation-title">Геодезическая широта</div>
+                                        <div class="denotation-text">Угол между нормалью к эллипсоиду и плоскостью экватора</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon blue-icon">L</div>
+                                    <div>
+                                        <div class="denotation-title">Геодезическая долгота</div>
+                                        <div class="denotation-text">Двугранный угол между меридианами</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon green-icon">H</div>
+                                    <div>
+                                        <div class="denotation-title">Геодезическая высота</div>
+                                        <div class="denotation-text">Расстояние от точки по нормали до поверхности эллипсоида</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">Q</div>
+                                    <div>
+                                        <div class="denotation-title">Расстояние в плоскости экватора</div>
+                                        <div class="denotation-text">Q = √(X² + Y²) — проекция точки на плоскость экватора</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon blue-icon">N</div>
+                                    <div>
+                                        <div class="denotation-title">Радиус кривизны первого вертикала</div>
+                                        <div class="denotation-text">N = a / W — расстояние по нормали до оси вращения</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon green-icon">W</div>
+                                    <div>
+                                        <div class="denotation-title">Первая сфероидическая функция</div>
+                                        <div class="denotation-text">W = √(1 − e² · sin² B)</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">T</div>
+                                    <div>
+                                        <div class="denotation-title">Вспомогательная величина</div>
+                                        <div class="denotation-text">T = Z + e² · N · sin B — используется в итерациях</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon blue-icon">a</div>
+                                    <div>
+                                        <div class="denotation-title">Большая полуось эллипсоида</div>
+                                        <div class="denotation-text">Основной размерный параметр референц-эллипсоида (в метрах)</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon green-icon">e²</div>
+                                    <div>
+                                        <div class="denotation-title">Первый эксцентриситет</div>
+                                        <div class="denotation-text">Квадрат первого эксцентриситета эллипсоида</div>
+                                    </div>
+                                </div>
+                                <div class="denotation-item">
+                                    <div class="denotation-icon">ε<sub>B</sub></div>
+                                    <div>
+                                        <div class="denotation-title">Точность сходимости</div>
+                                        <div class="denotation-text">Допустимая разность широт между итерациями (обычно 0,0001″)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах WGS-84, ГСК-2011, ПЗ-90.11 и Красовского. Точность, скорость и удобство.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.html" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Прямая задача.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="Обратная задача.html" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="Преобразование координат.html" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="Площадь и размеры сфероид. трапеции.HTML" class="hover:text-white transition-colors">Площадь и размеры рамок трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Дипломный проект, СГУГиТ.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleSection(header) {
+            const section = header.closest('.expandable-section');
+            section.classList.toggle('open');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

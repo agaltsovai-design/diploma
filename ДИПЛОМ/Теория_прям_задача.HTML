@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прямая и обратная геодезические задачи | GEOPOINT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/300.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/500.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/700.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/800.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "geo-orange": "#FF6B31",
+                        "geo-orange-dark": "#EA580C",
+                        "geo-orange-light": "#FFF7ED",
+                        "geo-blue": "#3166FF",
+                        "geo-light": "#EFF6FF"
+                    },
+                    fontFamily: { inter: ["Inter", "sans-serif"] }
+                }
+            }
+        };
+    </script>
+    <style>
+        :root { --ring: rgba(255, 107, 49, 0.2); }
+        body {
+            font-family: "Inter", sans-serif;
+            background: #FDF8F5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            color: #0f172a;
+        }
+        .logo-home { text-decoration: none; }
+        .logo-text { font-weight: 800; letter-spacing: -0.02em; }
+        .logo-geo { color: #FF6B31; }
+        .logo-point { color: #3166FF; }
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #3166FF;
+            border-radius: 9999px;
+        }
+        .nav-link { color: #1E293B; transition: all .2s ease; cursor: pointer; }
+        .nav-link:hover { color: #FF6B31; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: white;
+            opacity: 0.85;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+        .back-link:hover { opacity: 1; gap: 12px; }
+        .back-link .back-icon { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .back-link:hover .back-icon { transform: translateX(-3px); }
+        .hero-title { letter-spacing: .01em; }
+        .section-title { font-size: 1.75rem; font-weight: 800; line-height: 1.2; }
+        .glass-card { background: #fff; border: 1px solid #edf1f7; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08); }
+        .task-toggle {
+            display: flex;
+            gap: .5rem;
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: .35rem;
+            border: 1px solid #E2E8F0;
+        }
+        .task-btn {
+            flex: 1;
+            padding: .75rem 1rem;
+            border-radius: .85rem;
+            font-size: .9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .25s ease;
+            text-align: center;
+            border: 2px solid transparent;
+            background: transparent;
+            color: #64748B;
+        }
+        .task-btn.active {
+            background: #FF6B31;
+            color: #fff;
+            border-color: #FF6B31;
+            box-shadow: 0 4px 12px rgba(255, 107, 49, 0.3);
+        }
+        .task-btn:not(.active):hover { background: #FFF7ED; color: #FF6B31; }
+        
+        .formula-container {
+            background: #fff;
+            border: 1px solid #E8ECF0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            overflow-x: auto;
+        }
+        .math-step-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #FF6B31;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .math-formula {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.2rem;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 3rem;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 0.2em;
+            font-size: 0.9em;
+        }
+        .frac > span {
+            display: block;
+            padding: 0.1em;
+        }
+        .frac span.bottom {
+            border-top: 1px solid #1e293b;
+        }
+        .sqrt {
+            border-top: 1px solid #1e293b;
+            padding-left: 2px;
+            margin-left: 2px;
+        }
+        .math-group {
+            display: inline;
+            white-space: normal;
+        }
+        sup, sub {
+            font-size: 0.75em;
+        }
+        
+        .denotations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .denotation-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .denotation-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #FF6B31;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-family: 'Times New Roman', serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(255, 107, 49, 0.3);
+        }
+        .denotation-icon.blue-icon { background: #3166FF; box-shadow: 0 4px 10px rgba(49,102,255,0.3); }
+        .denotation-icon.green-icon { background: #10B981; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+        .denotation-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0f172a;
+            margin-bottom: 0.2rem;
+        }
+        .denotation-text {
+            font-size: 0.85rem;
+            color: #64748B;
+            line-height: 1.4;
+        }
+        .highlight-orange { color: #FF6B31; font-weight: 700; }
+        .intro-box {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .given-box {
+            flex: 1;
+            min-width: 260px;
+            background: #FFF7ED;
+            border: 1px solid #FED7AA;
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
+        .given-box.find-box {
+            background: #EFF6FF;
+            border-color: #BFDBFE;
+        }
+        .box-label {
+            font-size: .7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: .75rem;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+        .given-box .box-label { color: #FF6B31; }
+        .given-box.find-box .box-label { color: #3166FF; }
+        .box-item {
+            font-size: .875rem;
+            color: #334155;
+            line-height: 1.6;
+            padding-left: .5rem;
+        }
+        .box-item code {
+            background: rgba(255,107,49,0.1);
+            padding: .1rem .4rem;
+            border-radius: .25rem;
+            font-weight: 600;
+            color: #EA580C;
+        }
+        .given-box.find-box .box-item code {
+            background: rgba(49,102,255,0.1);
+            color: #1E40AF;
+        }
+        .expandable-section {
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            background: #fff;
+            transition: all .3s ease;
+        }
+        .expandable-section.open { box-shadow: 0 8px 24px rgba(255,107,49,0.08); border-color: #FED7AA; }
+        .expandable-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            transition: background .2s;
+            user-select: none;
+        }
+        .expandable-header:hover { background: #FFF7ED; }
+        .expandable-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .expandable-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); color: #fff; }
+        .expandable-icon.blue { background: linear-gradient(135deg, #3166FF, #1E40AF); color: #fff; }
+        .expandable-icon.green { background: linear-gradient(135deg, #10B981, #059669); color: #fff; }
+        .expandable-title { font-weight: 700; font-size: 1rem; color: #0f172a; }
+        .expandable-subtitle { font-size: .8rem; color: #94A3B8; }
+        .expandable-arrow {
+            margin-left: auto;
+            transition: transform .3s ease;
+            color: #94A3B8;
+        }
+        .expandable-section.open .expandable-arrow { transform: rotate(180deg); color: #FF6B31; }
+        .expandable-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .4s ease;
+        }
+        .expandable-section.open .expandable-body { max-height: 10000px; }
+        .expandable-body-inner {
+            padding: 0 1.5rem 1.5rem;
+        }
+        .info-note {
+            display: flex;
+            gap: .75rem;
+            align-items: flex-start;
+            padding: 1rem 1.25rem;
+            background: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            border-radius: .75rem;
+            margin-top: 1rem;
+        }
+        .info-note svg { color: #10B981; flex-shrink: 0; margin-top: .1rem; }
+        .info-note p { font-size: .85rem; color: #374151; line-height: 1.5; }
+        .task-content { display: none; }
+        .task-content.active { display: block; }
+        .illustration-card {
+            background: #fff;
+            border: 1px solid #E8ECF0;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .illustration-card img {
+            width: 100%;
+            max-width: 520px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .illustration-caption {
+            padding: 1rem 1.5rem;
+            font-size: .85rem;
+            color: #64748B;
+            text-align: center;
+            border-top: 1px solid #E8ECF0;
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeInUp .4s ease-out both; }
+        @media (max-width: 640px) {
+            .denotations-grid { grid-template-columns: 1fr; }
+            .intro-box { flex-direction: column; }
+            .math-formula { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="fixed w-full top-0 z-50 pt-4 px-4">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-8 py-4 flex justify-between items-center shadow-lg">
+                <a href="index.html" class="flex items-center gap-2">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="Главная страница.html" class="nav-link text-base font-semibold">Главная</a>
+                    <a href="Главная страница.html#calculators" class="nav-link text-base font-semibold">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link nav-link-active text-base font-semibold">Теория</a>
+                    <a href="О проекте.html" class="nav-link text-base font-semibold">О проекте</a>
+                    <a href="Справка.html" class="nav-link text-base font-semibold">Справка</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-4">
+        <div class="max-w-6xl mx-auto pt-0 pb-6">
+            <!-- HERO -->
+            <div class="bg-gradient-to-br from-geo-orange to-geo-orange-dark rounded-3xl p-8 mb-8 text-white shadow-lg">
+                <a href="Теория.html" class="back-link mb-6">
+                    <i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i>
+                    НАЗАД К ТЕМАМ
+                </a>
+                <h1 class="hero-title section-title mb-2">ПРЯМАЯ И ОБРАТНАЯ ГЕОДЕЗИЧЕСКИЕ ЗАДАЧИ</h1>
+                <p class="text-orange-100 text-[1rem] max-w-6xl">Общие сведения о решении главной геодезической задачи на поверхности эллипсоида</p>
+            </div>
+
+            <!-- TOGGLE -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                <div class="flex items-start gap-3 mb-6">
+                    <div class="w-12 h-12 rounded-lg bg-orange-50 text-geo-orange flex items-center justify-center border border-orange-100 flex-shrink-0">
+                        <i data-lucide="book-open" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold leading-none text-slate-900">ВЫБЕРИТЕ ЗАДАЧУ</h2>
+                        <p class="text-sm text-slate-500 mt-1">Изучите теорию и формулы для нужной задачи</p>
+                    </div>
+                </div>
+
+                <div class="task-toggle mb-8 max-w-lg">
+                    <button class="task-btn active" onclick="switchTask('direct')" id="btn-direct">
+                        Прямая задача
+                    </button>
+                    <button class="task-btn" onclick="switchTask('inverse')" id="btn-inverse">
+                        Обратная задача
+                    </button>
+                </div>
+
+                <!-- ==================== ПРЯМАЯ ЗАДАЧА ==================== -->
+                <div id="task-direct" class="task-content active">
+                    
+                    <!-- Введение (открыт по умолчанию) -->
+                    <div class="expandable-section open mb-4">
+                        <div class="expandable-header" onclick="toggleSection(this)">
+                            <div class="expandable-icon orange">
+                                <i data-lucide="book-open" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="expandable-title">ВВЕДЕНИЕ</div>
+                                <div class="expandable-subtitle">Определение прямой геодезической задачи</div>
+                            </div>
+                            <i data-lucide="chevron-down" class="expandable-arrow w-5 h-5"></i>
+                        </div>
+                        <div class="expandable-body">
+                            <div class="expandable-body-inner">
+                                <p class="text-[.9rem] text-slate-600 leading-relaxed mb-4">
+                                    <span class="highlight-orange">Прямой геодезической задачей</span> называют вычисление геодезических координат определяемого пункта B по координатам исходного пункта A, длине S геодезической линии и дирекционному углу A₁.
+                                </p>
+                                
+                                <!-- Иллюстрация -->
+                                <div class="illustration-card">
+                                    <img src="assets/Geodesic_problem_on_an_ellipsoid.svg" alt="Прямая геодезическая задача на эллипсоиде" width="312" height="230" loading="lazy">
+                                    <div class="illustration-caption">
+                                        <span class="font-semibold text-slate-700">Рис. 1.</span> <span>N</span> — север; <span>A, B</span> — пункты; <span>S₁₂</span> — геодезическая линия; <span>B₁, B₂</span> — широты; <span>A₁, A₂</span> — прямой и обратный дирекционные углы; <span>A₀</span> — угол линии к экватору; <span>ΔL</span> — разность долгот.
+                                    </div>
+                                </div>
+
+                                <div class="intro-box">
+                                    <div class="given-box">
+                                        <div class="box-label">
+                                            <i data-lucide="arrow-right" class="w-4 h-4"></i> ДАНО
+                                        </div>
+                                        <div class="box-item"><code>B₁, L₁</code> — геодезические координаты исходного пункта Q₁</div>
+                                        <div class="box-item"><code>S, A₁</code> — полярные координаты определяемого пункта Q₂ </div>
+                                    </div>
+                                    <div class="given-box find-box">
+                                        <div class="box-label">
+                                            <i data-lucide="target" class="w-4 h-4"></i> НАЙТИ
+                                        </div>
+                                        <div class="box-item"><code>B₂, L₂</code> — геодезические координаты пункта Q₂</div>
+                                        <div class="box-item"><code>A₂</code> — обратный азимут с пункта Q₂ на пункт Q₁</div>
+                                    </div>
+                                </div>
+                                <div class="info-note">
+                                    <i data-lucide="info" class="w-5 h-5"></i>
+                                    <p>Прямую геодезическую задачу можно рассматривать как задачу преобразования полярных координат в геодезические. Она решается на поверхности эллипсоида с учётом его кривизны.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Метод Бесселя -->
+                    <div class="expandable-section mb-4">
+                        <div class="expandable-header" onclick="toggleSection(this)">
+                            <div class="expandable-icon orange">
+                                <i data-lucide="function-square" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="expandable-title">РЕШЕНИЕ ПО МЕТОДУ БЕССЕЛЯ</div>
+                                <div class="expandable-subtitle">Основной алгоритм решения прямой задачи на эллипсоиде</div>
+                            </div>
+                            <i data-lucide="chevron-down" class="expandable-arrow w-5 h-5"></i>
+                        </div>
+                        <div class="expandable-body">
+                            <div class="expandable-body-inner">
+                                
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 1 — Приведённая широта</span>
+                                    <div class="math-formula">
+                                        U₁ = arctg ( √<span class="sqrt">1 − e²</span> · tg B₁ )
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 2 — Вспомогательные величины</span>
+                                    <div class="math-formula">
+                                        σ₁ = arctg ( 
+                                        <div class="frac"><span>tg U₁</span><span class="bottom">cos A₁</span></div>
+                                        ), &nbsp;&nbsp;
+                                        A₀ = arcsin (cos U₁ sin A₁)
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 3 — Параметр k</span>
+                                    <div class="math-formula">
+                                        k² = e'² cos² A₀
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 4 — Коэффициенты C₀, C₁, C₂, C₃</span>
+                                    <div class="math-formula">
+                                        C₀ = 1 + 
+                                        <div class="frac"><span>1</span><span class="bottom">4</span></div>k² − 
+                                        <div class="frac"><span>3</span><span class="bottom">64</span></div>k⁴ + 
+                                        <div class="frac"><span>5</span><span class="bottom">256</span></div>k⁶
+                                    </div>
+                                    <div style="margin-top: 0.75rem;" class="math-formula">
+                                        C₁ = 
+                                        <div class="frac"><span>1</span><span class="bottom">4</span></div>k² − 
+                                        <div class="frac"><span>1</span><span class="bottom">16</span></div>k⁴ + 
+                                        <div class="frac"><span>15</span><span class="bottom">512</span></div>k⁶
+                                    </div>
+                                    <div style="margin-top: 0.75rem;" class="math-formula">
+                                        C₂ = 
+                                        <div class="frac"><span>1</span><span class="bottom">64</span></div>k⁴ − 
+                                        <div class="frac"><span>3</span><span class="bottom">256</span></div>k⁶
+                                    </div>
+                                    <div style="margin-top: 0.75rem;" class="math-formula">
+                                        C₃ = 
+                                        <div class="frac"><span>1</span><span class="bottom">512</span></div>k⁶
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 5 — Коэффициенты D₀, D₁, D₂, D₃</span>
+                                    <div class="math-formula">
+                                        D₀ = bC₀; &nbsp;&nbsp;
+                                        D₁ = 
+                                        <div class="frac"><span>C₁</span><span class="bottom">C₀</span></div>; &nbsp;&nbsp;
+                                        D₂ = 
+                                        <div class="frac"><span>C₂</span><span class="bottom">2C₀</span></div>; &nbsp;&nbsp;
+                                        D₃ = 
+                                        <div class="frac"><span>C₃</span><span class="bottom">3C₀</span></div>
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 6 — Сферическое расстояние σ</span>
+                                    <div class="math-formula">
+                                        σ = σ₀ + D₁ sin σ cos(2σ₁ + σ) + D₂ sin 2σ cos(4σ₁ + 2σ) + D sin 3σ cos(6σ₁ + 3σ)
+                                    </div>
+                                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748B;" class="math-formula">
+                                        где σ₀ = S / D₀
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 7 — Сферические долготы</span>
+                                    <div class="math-formula">
+                                        λ₁ = arctg (tg σ₁ sin A₀), &nbsp;&nbsp;
+                                        λ₂ = arctg (tg σ₂ sin A₀)
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 8 — Разность долгот</span>
+                                    <div class="math-formula">
+                                        Δλ = λ₂ − λ₁
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 9 — Координаты на сфере</span>
+                                    <div class="math-formula">
+                                        A'₂ = arctg (
+                                        <div class="frac"><span>tg A₀</span><span class="bottom">cos σ₂</span></div>
+                                        ), &nbsp;&nbsp;
+                                        U₂ = arctg (tg σ₂ cos A'₂)
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 10 — Вычисляем коэффициенты βᵢ</span>
+                                    <div class="math-formula">
+                                        β₁ = 
+                                        <div class="frac"><span>1</span><span class="bottom">2</span></div>e² + 
+                                        <div class="frac"><span>1</span><span class="bottom">8</span></div>e + 
+                                        <div class="frac"><span>1</span><span class="bottom">16</span></div>e⁶ − 
+                                        (
+                                        <div class="frac"><span>1</span><span class="bottom">16</span></div>e⁴ + 
+                                        <div class="frac"><span>1</span><span class="bottom">16</span></div>e⁶
+                                        ) cos² A₀ + 
+                                        <div class="frac"><span>3</span><span class="bottom">128</span></div>e cos⁴ A₀
+                                    </div>
+                                    <div style="margin-top: 0.75rem;" class="math-formula">
+                                        β₂ = 
+                                        (
+                                        <div class="frac"><span>1</span><span class="bottom">16</span></div>e⁴ + 
+                                        <div class="frac"><span>1</span><span class="bottom">16</span></div>e⁶
+                                        ) cos² A₀ − 
+                                        <div class="frac"><span>1</span><span class="bottom">32</span></div>e⁶ cos⁴ A₀
+                                    </div>
+                                    <div style="margin-top: 0.75rem;" class="math-formula">
+                                        β₃ = 
+                                        <div class="frac"><span>1</span><span class="bottom">128</span></div>e⁶ cos⁴ A₀
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 11 — Окончательные координаты</span>
+                                    <p class="text-sm text-slate-600 mb-2">Вычисляем поправку ΔL:</p>
+                                    <div class="math-formula">
+                                        ΔL = Δλ − sin A₀ [β₁σ + β₂ sin σ cos(2σ₁ + σ) + 
+                                        <div class="frac"><span>β₃</span><span class="bottom">2</span></div> sin 2σ cos(4σ₁ + 2σ)]
+                                    </div>
+                                    <div style="margin-top: 1.5rem;" class="math-formula">
+                                        B₂ = arctg ( √<span class="sqrt">1 + e'²</span> · tg U₂ )
+                                    </div>
+                                    <div style="margin-top: 0.75rem;" class="math-formula">
+                                        L₂ = L₁ + ΔL
+                                    </div>
+                                    <div style="margin-top: 0.75rem;" class="math-formula">
+                                        A₂ = A'₂ ± 180°
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                                         
+                    <!-- Обозначения в формулах ПРЯМОЙ задачи -->
+                    <div class="expandable-section mb-4">
+                        <div class="expandable-header" onclick="toggleSection(this)">
+                            <div class="expandable-icon orange">
+                                <i data-lucide="type" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="expandable-title">ОБОЗНАЧЕНИЯ В ФОРМУЛАХ ПРЯМОЙ ЗАДАЧИ</div>
+                                <div class="expandable-subtitle">Символы и параметры, используемые в формулах прямой задачи</div>
+                            </div>
+                            <i data-lucide="chevron-down" class="expandable-arrow w-5 h-5"></i>
+                        </div>
+                        <div class="expandable-body">
+                            <div class="expandable-body-inner">
+                                <div class="denotations-grid">
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon">B</div>
+                                        <div>
+                                            <div class="denotation-title">Геодезическая широта</div>
+                                            <div class="denotation-text">Угол между нормалью к эллипсоиду и плоскостью экватора</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon blue-icon">L</div>
+                                        <div>
+                                            <div class="denotation-title">Геодезическая долгота</div>
+                                            <div class="denotation-text">Двугранный угол между меридианами</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon green-icon">U</div>
+                                        <div>
+                                            <div class="denotation-title">Приведённая широта</div>
+                                            <div class="denotation-text">Вспомогательная широта на вспомогательной сфере</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon">A</div>
+                                        <div>
+                                            <div class="denotation-title">Азимут</div>
+                                            <div class="denotation-text">Угол между меридианом и направлением линии</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon blue-icon">A₀</div>
+                                        <div>
+                                            <div class="denotation-title">Азимут на экваторе</div>
+                                            <div class="denotation-text">Азимут геодезической линии в точке пересечения экватора</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon green-icon">σ</div>
+                                        <div>
+                                            <div class="denotation-title">Сферическое расстояние</div>
+                                            <div class="denotation-text">Центральный угол дуги на вспомогательной сфере</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon">σ₁, σ₂</div>
+                                        <div>
+                                            <div class="denotation-title">Сферические широты</div>
+                                            <div class="denotation-text">Расстояние по сфере от экватора до точки</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon blue-icon">λ₁, λ₂</div>
+                                        <div>
+                                            <div class="denotation-title">Сферические долготы</div>
+                                            <div class="denotation-text">Долготы точек на вспомогательной сфере</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon green-icon">Δλ</div>
+                                        <div>
+                                            <div class="denotation-title">Разность долгот на сфере</div>
+                                            <div class="denotation-text">Разность сферических долгот между точками</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon">e²</div>
+                                        <div>
+                                            <div class="denotation-title">Первый эксцентриситет²</div>
+                                            <div class="denotation-text">Квадрат первого эксцентриситета эллипсоида</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon blue-icon">e'²</div>
+                                        <div>
+                                            <div class="denotation-title">Второй эксцентриситет²</div>
+                                            <div class="denotation-text">Квадрат второго эксцентриситета эллипсоида</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon green-icon">k²</div>
+                                        <div>
+                                            <div class="denotation-title">Параметр Бесселя</div>
+                                            <div class="denotation-text">Вспомогательный параметр k² = e'² cos² A₀</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon">C</div>
+                                        <div>
+                                            <div class="denotation-title">Коэффициенты ряда</div>
+                                            <div class="denotation-text">Коэффициенты разложения в ряд по степеням k²</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon blue-icon">Dᵢ</div>
+                                        <div>
+                                            <div class="denotation-title">Коэффициенты длины</div>
+                                            <div class="denotation-text">Нормированные коэффициенты для вычисления длины</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon green-icon">βᵢ</div>
+                                        <div>
+                                            <div class="denotation-title">Коэффициенты поправки</div>
+                                            <div class="denotation-text">Коэффициенты для поправки долготы ΔL</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon">a, b</div>
+                                        <div>
+                                            <div class="denotation-title">Полуоси эллипсоида</div>
+                                            <div class="denotation-text">Большая и малая полуоси земного эллипсоида</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon blue-icon">f</div>
+                                        <div>
+                                            <div class="denotation-title">Сжатие эллипсоида</div>
+                                            <div class="denotation-text">f = (a − b) / a — относительное сжатие</div>
+                                        </div>
+                                    </div>
+                                    <div class="denotation-item">
+                                        <div class="denotation-icon green-icon">ρ″</div>
+                                        <div>
+                                            <div class="denotation-title">Число секунд в радиане</div>
+                                            <div class="denotation-text">ρ″ = 206264.806″ — перевод радиан в секунды</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ==================== ОБРАТНАЯ ЗАДАЧА ==================== -->
+                <div id="task-inverse" class="task-content">
+                    
+                    <!-- Введение (открыт по умолчанию) -->
+                    <div class="expandable-section open mb-4">
+                        <div class="expandable-header" onclick="toggleSection(this)">
+                            <div class="expandable-icon orange">
+                                <i data-lucide="book-open" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="expandable-title">ВВЕДЕНИЕ</div>
+                                <div class="expandable-subtitle">Определение обратной геодезической задачи</div>
+                            </div>
+                            <i data-lucide="chevron-down" class="expandable-arrow w-5 h-5"></i>
+                        </div>
+                        <div class="expandable-body">
+                            <div class="expandable-body-inner">
+                                <p class="text-[.9rem] text-slate-600 leading-relaxed mb-4">
+                                    <span class="highlight-orange">Обратной геодезической задачей</span> называют определение кратчайшего расстояния S между двумя пунктами и азимутов A₁ и A₂ по заданным геодезическим координатам.
+                                </p>
+
+                                <!-- Иллюстрация -->
+                                <div class="illustration-card">
+                                    <img src="assets/Geodesic_problem_on_an_ellipsoid.svg" alt="Обратная геодезическая задача на эллипсоиде" width="312" height="230" loading="lazy">
+                                    <div class="illustration-caption">
+                                        <span class="font-semibold text-slate-700">Рис. 1.</span> <span>N</span> — север; <span>A, B</span> — пункты; <span>S₁₂</span> — геодезическая линия; <span>B₁, B₂</span> — широты; <span>A₁, A₂</span> — прямой и обратный дирекционные углы; <span>A₀</span> — угол линии к экватору; <span>ΔL</span> — разность долгот.
+                                    </div>
+                                </div>
+
+                                <div class="intro-box">
+                                    <div class="given-box">
+                                        <div class="box-label">
+                                            <i data-lucide="arrow-right" class="w-4 h-4"></i> ДАНО
+                                        </div>
+                                        <div class="box-item"><code>B₁, L₁</code> — геодезические координаты пункта Q₁</div>
+                                        <div class="box-item"><code>B₂, L₂</code> — геодезические координаты пункта Q₂</div>
+                                    </div>
+                                    <div class="given-box find-box">
+                                        <div class="box-label">
+                                            <i data-lucide="target" class="w-4 h-4"></i> НАЙТИ
+                                        </div>
+                                        <div class="box-item"><code>S</code> — геодезическое расстояние между Q₁ и Q₂</div>
+                                        <div class="box-item"><code>A₁</code> — прямой азимут с Q₁ на Q₂</div>
+                                        <div class="box-item"><code>A₂</code> — обратный азимут с Q₂ на Q₁</div>
+                                    </div>
+                                </div>
+                                <div class="info-note">
+                                    <i data-lucide="info" class="w-5 h-5"></i>
+                                    <p>Обратная геодезическая задача является обратной к прямой. Она широко используется при камеральной обработке геодезических измерений, вычислении длин сторон и дирекционных углов по координатам.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Метод средних аргументов (Обратная) -->
+                    <div class="expandable-section mb-4">
+                        <div class="expandable-header" onclick="toggleSection(this)">
+                            <div class="expandable-icon orange">
+                                <i data-lucide="function-square" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="expandable-title">МЕТОД СРЕДНИХ АРГУМЕНТОВ</div>
+                                <div class="expandable-subtitle">Решение обратной задачи через средние аргументы</div>
+                            </div>
+                            <i data-lucide="chevron-down" class="expandable-arrow w-5 h-5"></i>
+                        </div>
+                        <div class="expandable-body">
+                            <div class="expandable-body-inner">
+                                
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 1 — Разности координат и средняя широта</span>
+                                    <div class="math-formula">
+                                        ΔB = 
+                                        <div class="frac"><span>B₂ − B₁</span><span class="bottom">ρ″</span></div>, &nbsp;&nbsp;
+                                        ΔL = 
+                                        <div class="frac"><span>L₂ − L₁</span><span class="bottom">ρ″</span></div>, &nbsp;&nbsp;
+                                        Bср = 
+                                        <div class="frac"><span>B₂ + B₁</span><span class="bottom">2</span></div>
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 2 — Вспомогательные величины P и Q</span>
+                                    <div class="math-formula">
+                                        P = ΔL · M<sub>ср</sub> · <span class="math-group">(1 −
+                                        <span class="frac"><span>ΔL²</span><span class="bottom">12</span></span> −
+                                        <span class="frac"><span>(ΔL sin B<sub>ср</sub>)²</span><span class="bottom">24</span></span>)</span>
+                                    </div>
+                                    <div style="margin-top: 1rem;" class="math-formula">
+                                        Q = ΔL · cos B<sub>ср</sub> · N<sub>ср</sub> · <span class="math-group">(1 +
+                                        <span class="frac"><span>ΔB²</span><span class="bottom">24</span></span> −
+                                        <span class="frac"><span>(ΔL sin B<sub>ср</sub>)²</span><span class="bottom">24</span></span>)</span>
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 3 — Расстояние и средний азимут</span>
+                                    <div class="math-formula">
+                                        S = √<span class="sqrt">P² + Q²</span>, &nbsp;&nbsp;
+                                        Aср = arctg (
+                                        <div class="frac"><span>Q</span><span class="bottom">P</span></div>
+                                        )
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 4 — Поправка в азимут</span>
+                                    <div class="math-formula">
+                                        ΔA = ΔL · sin B<sub>ср</sub> · <span class="math-group">(1 +
+                                        <span class="frac"><span>ΔB²</span><span class="bottom">8</span></span> +
+                                        <span class="frac"><span>ΔL²</span><span class="bottom">12</span></span> −
+                                        <span class="frac"><span>(ΔL sin B<sub>ср</sub>)²</span><span class="bottom">12</span></span>)</span>
+                                    </div>
+                                </div>
+
+                                <div class="formula-container">
+                                    <span class="math-step-label">Шаг 5 — Искомые азимуты</span>
+                                    <div class="math-formula">
+                                        A₁₂ = Aср − 
+                                        <div class="frac"><span>ΔA</span><span class="bottom">2</span></div>, &nbsp;&nbsp;
+                                        A₂₁ = Aср ± 180° + 
+                                        <div class="frac"><span>ΔA</span><span class="bottom">2</span></div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white pt-20 pb-10" id="site-footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html.html" class="logo-home inline-block">
+                        <span class="logo-text text-2xl">
+                            <span class="logo-geo">GEO</span><span class="logo-point">POINT</span>
+                        </span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах СК-42, СК-95, ПЗ-90.11, ГСК-2011 и WGS-84. Точность, скорость и удобство.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.html" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Прямая задача.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="Обратная задача.html" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="Преобразование координат.html" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="Площадь и размеры сфероид. трапеции.HTML" class="hover:text-white transition-colors">Площадь и размеры рамок трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Все права защищены.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function switchTask(task) {
+            document.querySelectorAll('.task-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.task-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('task-' + task).classList.add('active');
+            document.getElementById('btn-' + task).classList.add('active');
+            
+            // Only introduction section open
+            const content = document.getElementById('task-' + task);
+            const sections = content.querySelectorAll('.expandable-section');
+            sections.forEach((section, index) => {
+                if (index === 0) {
+                    section.classList.add('open');
+                } else {
+                    section.classList.remove('open');
+                }
+            });
+            
+            lucide.createIcons();
+        }
+
+        function toggleSection(header) {
+            const section = header.closest('.expandable-section');
+            section.classList.toggle('open');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            // Only introduction open initially; denotations closed by default
+            document.querySelectorAll('.task-content').forEach(content => {
+                const sections = content.querySelectorAll('.expandable-section');
+                sections.forEach((section, index) => {
+                    if (index === 0) {
+                        section.classList.add('open');
+                    } else {
+                        section.classList.remove('open');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вычисление площади и размеров рамок сфероидической трапеции | GEOPOINT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/300.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/500.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/700.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/800.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "geo-orange": "#FF6B31",
+                        "geo-orange-dark": "#EA580C",
+                        "geo-blue": "#3166FF",
+                        "geo-light": "#EFF6FF"
+                    },
+                    fontFamily: { inter: ["Inter", "sans-serif"] }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background: #FDF8F5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            color: #0f172a;
+            font-size: 1.05rem;
+        }
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #3166FF;
+            border-radius: 9999px;
+        }
+        .nav-link { color: #1E293B; transition: all .2s ease; cursor: pointer; font-size: 1.05rem; }
+        .nav-link:hover { color: #3166FF; }
+        .nav-link-active { color: #3166FF; font-weight: 600; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            opacity: 0.85;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .back-link:hover { opacity: 1; gap: 12px; }
+        .back-link .back-icon { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .back-link:hover .back-icon { transform: translateX(-3px); }
+        .hero-title { letter-spacing: .01em; }
+        .section-title { font-size: 1.75rem; font-weight: 800; line-height: 1.2; }
+        .glass-card { background: #fff; border: 1px solid #edf1f7; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08); }
+        .expandable-section {
+            border-radius: 1.25rem;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            background: #fff;
+            transition: all .3s ease;
+            margin-bottom: 1.5rem;
+        }
+        .expandable-section.open { box-shadow: 0 8px 24px rgba(255,107,49,0.08); border-color: #FED7AA; }
+        .expandable-header {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            padding: 1.75rem 2rem;
+            cursor: pointer;
+            transition: background .2s;
+            user-select: none;
+        }
+        .expandable-header:hover { background: #FFF7ED; }
+        .expandable-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .expandable-icon.orange { background: linear-gradient(135deg, #FF6B31, #EA580C); color: #fff; }
+        .expandable-icon.blue { background: linear-gradient(135deg, #3166FF, #1E40AF); color: #fff; }
+        .expandable-icon.green { background: linear-gradient(135deg, #10B981, #059669); color: #fff; }
+        .expandable-icon.purple { background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: #fff; }
+        .expandable-title { font-weight: 700; font-size: 1.2rem; color: #0f172a; }
+        .expandable-subtitle { font-size: 0.95rem; color: #64748B; margin-top: 0.25rem; }
+        .expandable-arrow {
+            margin-left: auto;
+            transition: transform .3s ease;
+            color: #94A3B8;
+        }
+        .expandable-section.open .expandable-arrow { transform: rotate(180deg); color: #FF6B31; }
+        .expandable-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .5s ease;
+        }
+        .expandable-section.open .expandable-body { max-height: 8000px; }
+        .expandable-body-inner { padding: 0 2rem 2rem; }
+        .info-note {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1.25rem 1.5rem;
+            background: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            border-radius: 1rem;
+            margin-top: 1.5rem;
+        }
+        .info-note svg { color: #10B981; flex-shrink: 0; margin-top: 2px; }
+        .info-note p { font-size: 0.95rem; color: #374151; line-height: 1.6; }
+        .formula-card {
+            background: #fff;
+            border: 1px solid #E8ECF0;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow-x: auto;
+        }
+        .formula-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #3166FF;
+            margin-bottom: 1.25rem;
+        }
+        .formula-line {
+            display: block;
+            padding: 0.25rem 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.25rem;
+            color: #1e293b;
+            text-align: center;
+        }
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 0.25em;
+            font-size: 0.9em;
+        }
+        .frac > span { display: block; padding: 0.15em 0.3em; text-align: center; }
+        .frac span.bottom { border-top: 1.5px solid #1e293b; }
+        .sqrt { border-top: 1.5px solid #1e293b; padding-left: 3px; margin-left: 3px; }
+        .math-group { display: inline; white-space: normal; }
+        .abs { display: inline-block; padding: 0 0.1em; }
+        sup, sub { font-size: 0.75em; }
+        .step-list {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+            counter-reset: step;
+        }
+        .step-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.25rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.95rem;
+            color: #334155;
+        }
+        .step-list li:last-child { border-bottom: none; }
+        .step-list li::before {
+            content: counter(step);
+            counter-increment: step;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3166FF;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .nomenclature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        .nomenclature-table th, .nomenclature-table td {
+            padding: 0.75rem 1rem;
+            text-align: center;
+            border: 1px solid #E2E8F0;
+        }
+        .nomenclature-table th {
+            background: #F8FAFC;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+        .nomenclature-table td {
+            font-size: 0.95rem;
+            color: #334155;
+        }
+        .nomenclature-table tr:hover { background: #F0F9FF; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="fixed w-full top-0 z-50 pt-4 px-4">
+        <div class="max-w-6xl mx-auto">
+            <nav class="nav-pill px-8 py-4 flex justify-between items-center shadow-lg">
+                <a href="index.html" class="flex items-center gap-2">
+                    <span class="text-2xl font-bold">
+                        <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="Главная страница.html" class="nav-link text-base font-semibold">Главная</a>
+                    <a href="Главная страница.html#calculators" class="nav-link text-base font-semibold">Калькуляторы</a>
+                    <a href="Теория.html" class="nav-link nav-link-active text-base font-semibold">Теория</a>
+                    <a href="О проекте.html" class="nav-link text-base font-semibold">О проекте</a>
+                    <a href="Справка.html" class="nav-link text-base font-semibold">Справка</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-4">
+        <div class="max-w-6xl mx-auto pt-0 pb-6">
+            <!-- HERO -->
+            <div class="bg-geo-blue rounded-3xl p-8 mb-8 text-white shadow-lg">
+                <a href="Теория.html" class="back-link mb-6">
+                    <i data-lucide="arrow-left" class="w-5 h-5 back-icon"></i>
+                    НАЗАД К ТЕМАМ
+                </a>
+                <h1 class="hero-title section-title max-w-6xl mb-3">ВЫЧИСЛЕНИЕ ПЛОЩАДИ И РАЗМЕРОВ РАМОК</br> СФЕРОИДИЧЕСКОЙ ТРАПЕЦИИ</h1>
+                <p class="text-blue-100 text-[1.1rem] max-w-6xl leading-relaxed">Методика определения площади и размеров рамок сфероидической трапеции заданного масштаба по геодезическим координатам точки</p>
+            </div>
+
+            <!-- Section 1: Введение -->
+            <div class="expandable-section open">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon orange">
+                        <i data-lucide="globe" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">ВВЕДЕНИЕ</div>
+                        <div class="expandable-subtitle">Понятие сфероидической трапеции и её применение</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 mb-4 leading-relaxed">
+                            <strong>Сфероидическая трапеция</strong> — это геометрическая фигура на поверхности земного эллипсоида, ограниченная двумя меридианами и двумя параллелями.
+                        </p>
+                        <p class="text-slate-600 mb-4 leading-relaxed">
+                            При решении некоторых специальных задач в геодезии требуется знать площади и размеры рамок сфероидических трапеций. Например, при построении съёмочной трапеции необходимы размеры сторон рамок, а при определении объёмов съёмочных работ — площади трапеций того или иного масштаба. Учитывая, что съёмочные трапеции до масштаба 1:2000 включительно ограничены меридианами и параллелями, задача сводится к вычислению размеров сторон и площадей сфероидических трапеций.
+                        </p>
+                        
+                        <div class="info-note">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                            <p>Основой международной разграфки является лист карты масштаба <strong>1:1 000 000</strong>, который представляет собой сфероидическую трапецию, ограниченную меридианами с разностью долгот <strong>6°</strong> и параллелями с разностью широт <strong>4°</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Section 3: Формулы площади -->
+            <div class="expandable-section">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon green">
+                        <i data-lucide="area-chart" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">ФОРМУЛЫ ВЫЧИСЛЕНИЯ ПЛОЩАДИ</div>
+                        <div class="expandable-subtitle">Точные и приближённые выражения для площади трапеции</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 mb-4 leading-relaxed">
+                            Площадь сфероидической трапеции вычисляется на основе интегрирования элементарной площади. Для бесконечно малой трапеции, ограниченной бесконечно близкими меридианами и параллелями:
+                        </p>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Элементарная площадь</div>
+                            <div class="formula-line">
+                                dP = M · N · cos B · dB · dL
+                            </div>
+                        </div>
+
+                        <figure class="my-6 text-center bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                            <img src="assets/elementary-trapezoid-area.svg" alt="Элементарная площадь сфероидической трапеции" class="mx-auto max-w-full h-auto" width="312" height="230" loading="lazy">
+                            <figcaption class="text-sm text-slate-500 mt-3">Рис.1 — элементарная трапеция на поверхности эллипсоида (dP)</figcaption>
+                        </figure>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-6">Точная формула площади</h3>
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            После интегрирования и преобразований получается строгая формула для вычисления площади сфероидической трапеции:
+                        </p>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Формула (1) — Точное выражение</div>
+                            <div class="formula-line">
+                                P = b² · (L₂ − L₁) ·
+                                <span class="frac">
+                                    <span>1</span>
+                                    <span class="bottom">2</span>
+                                </span>
+                                · <span class="math-group">{
+                                <span class="frac">
+                                    <span>sin B₂</span>
+                                    <span class="bottom">W₂²</span>
+                                </span>
+                                −
+                                <span class="frac">
+                                    <span>sin B₁</span>
+                                    <span class="bottom">W₁²</span>
+                                </span>
+                                +
+                                <span class="frac">
+                                    <span>1</span>
+                                    <span class="bottom">e²</span>
+                                </span>
+                                · ln
+                                <span class="abs">|
+                                <span class="frac">
+                                    <span>(1 + e² sin B₂) W₁</span>
+                                    <span class="bottom">(1 + e² sin B₁) W₂</span>
+                                </span>
+                                |</span>
+                                }</span>
+                            </div>
+                        </div>
+
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            где <strong>b</strong> — малая полуось эллипсоида, <strong>e</strong> — первый эксцентриситет, <strong>L</strong> — долготы в радианной мере, <strong>B</strong> — широты, <strong>W</strong> — первая сфероидическая функция.
+                        </p>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-6">Приближённая формула площади</h3>
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            Для практических вычислений часто используется разложение подынтегрального выражения в ряд по степеням эксцентриситета с последующим почленным интегрированием:
+                        </p>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Формула (2) — Разложение в ряд</div>
+                            <div class="formula-line">
+                                P = b²(L₂ − L₁) ·
+                                <span class="frac">
+                                    <span>2</span>
+                                    <span class="bottom">3</span>
+                                </span> ·
+                                [sin B₂ − sin B₁ +
+                                <div class="frac">
+                                    <span>2e²</span>
+                                    <span class="bottom">3</span>
+                                </div>(sin³B₂ − sin³B₁) +
+                                <div class="frac">
+                                    <span>3e⁴</span>
+                                    <span class="bottom">5</span>
+                                </div>(sin⁵B₂ − sin⁵B₁) +
+                                <div class="frac">
+                                    <span>4e⁶</span>
+                                    <span class="bottom">7</span>
+                                </div>(sin⁷B₂ − sin⁷B₁) + ...]
+                            </div>
+                        </div>
+
+                        <div class="info-note">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                            <p>Формулы (1) и (2) являются универсальными: они позволяют вычислять не только площади сфероидических трапеций, но и площади сфероидических поясов, заключённых между двумя параллелями, площадь полусфероида или всей поверхности эллипсоида вращения.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Размеры рамок -->
+            <div class="expandable-section">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon purple">
+                        <i data-lucide="maximize-2" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">РАЗМЕРЫ РАМОК ТРАПЕЦИИ</div>
+                        <div class="expandable-subtitle">Вычисление длин сторон и диагонали с учётом масштаба</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 mb-4 leading-relaxed">
+                            Размеры рамок трапеции вычисляются на основании формул длин дуг меридианов и параллелей с учётом знаменателя масштаба съёмочной трапеции <strong>m</strong>.
+                        </p>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Длины параллельных сторон (южная и северная рамки)</div>
+                            <div class="formula-line">
+                                a₁ =
+                                <div class="frac">
+                                    <span>N₁ cos B₁ · (L₂ − L₁)″</span>
+                                    <span class="bottom">ρ″ · m</span>
+                                </div>
+                                , &nbsp;
+                                a₂ =
+                                <div class="frac">
+                                    <span>N₂ cos B₂ · (L₂ − L₁)″</span>
+                                    <span class="bottom">ρ″ · m</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Длина меридианных сторон (западная и восточная рамки)</div>
+                            <div class="formula-line">
+                                c′ =
+                                <div class="frac">
+                                    <span>M<sub>ср</sub> · (B₂ − B₁)″</span>
+                                    <span class="bottom">ρ″ · m</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Диагональ трапеции</div>
+                            <div class="formula-line">
+                                d = √<span class="sqrt">a₁ · a₂ + c′²</span>
+                            </div>
+                        </div>
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            где <strong>N₁, N₂</strong> — радиусы кривизны первого вертикала для широт B₁ и B₂; <strong>M<sub>ср</sub></strong> — радиус кривизны меридиана по средней широте;</br> <strong>ρ″</strong> = 206264,8062″ — число секунд в радиане; <strong>m</strong> — знаменатель масштаба.
+                        </p>
+
+                        <div class="info-note">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                            <p>Диагональ <strong>d</strong> вычисляется для контроля правильности графического построения рамок трапеции на карте.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Порядок выполнения -->
+            <div class="expandable-section">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon orange">
+                        <i data-lucide="list-ordered" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">ПОРЯДОК ВЫПОЛНЕНИЯ РАСЧЁТА</div>
+                        <div class="expandable-subtitle">Пошаговый алгоритм определения площади и размеров рамок</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <ol class="step-list">
+                            <li>
+                                <div>
+                                    <strong>Определить номер шестиградусной зоны.</strong> По долготе L точки вычислить номер зоны n = целое(L / 6) + 1 и долготу осевого меридиана зоны L₀ = 6n − 3.
+                                </div>
+                            </li>
+                            <li>
+                                <div>
+                                    <strong>Определить координаты рамок трапеции.</strong> По координатам точки и заданному масштабу определить геодезические широты B₁, B₂ и долготы L₁, L₂ южной, северной, западной и восточной рамок трапеции согласно схеме разграфки.
+                                </div>
+                            </li>
+                            <li>
+                                <div>
+                                    <strong>Определить номенклатуру листа.</strong> Определить обозначение листа карты по международной разграфке (например, О-39-79-Б для масштаба 1:50 000).
+                                </div>
+                            </li>
+                            <li>
+                                <div>
+                                    <strong>Вычислить площадь трапеции.</strong> Используя формулу (1) или (2), вычислить площадь сфероидической трапеции в км².
+                                </div>
+                            </li>
+                            <li>
+                                <div>
+                                    <strong>Вычислить размеры рамок.</strong> По формулам для a₁, a₂, c′ и d определить размеры сторон и диагонали рамки трапеции в сантиметрах на карте.
+                                </div>
+                            </li>
+                        </ol>
+
+                        <div class="info-note">
+                            <i data-lucide="lightbulb" class="w-5 h-5"></i>
+                            <p>Для масштаба <strong>1:50 000</strong> сфероидическая трапеция ограничена параллелями с разностью широт <strong>10′</strong> и меридианами с разностью долгот <strong>15′</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Разграфка и номенклатура -->
+            <div class="expandable-section">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon blue">
+                        <i data-lucide="grid" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">РАЗГРАФКА И НОМЕНКЛАТУРА ЛИСТОВ</div>
+                        <div class="expandable-subtitle">Схема деления поверхности Земли на листы карт различных масштабов</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 mb-4 leading-relaxed">
+                            Основой международной разграфки является лист карты масштаба <strong>1:1 000 000</strong>, который ограничен меридианами с разностью долгот <strong>6°</strong> и параллелями с разностью широт <strong>4°</strong>.
+                        </p>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-4">Обозначение листа 1:1 000 000</h3>
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            Обозначение листа масштаба 1:1 000 000 состоит из буквы ряда и номера колонны. Например, лист, заключённый между широтами 56° и 60° и долготами 48° и 54°, имеет обозначение <strong>О-39</strong>.
+                        </p>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-4">Разделение на листы более крупных масштабов</h3>
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            Каждый лист масштаба 1:1 000 000 делится на листы более крупных масштабов по определённой схеме:
+                        </p>
+
+                        <table class="nomenclature-table">
+                            <thead>
+                                <tr>
+                                    <th>Масштаб</th>
+                                    <th>Разность широт</th>
+                                    <th>Разность долгот</th>
+                                    <th>Количество листов</th>
+                                    <th>Обозначение</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1:1 000 000</td>
+                                    <td>4°</td>
+                                    <td>6°</td>
+                                    <td>1</td>
+                                    <td>О-39</td>
+                                </tr>
+                                <tr>
+                                    <td>1:500 000</td>
+                                    <td>2°</td>
+                                    <td>3°</td>
+                                    <td>4</td>
+                                    <td>А, Б, В, Г</td>
+                                </tr>
+                                <tr>
+                                    <td>1:200 000</td>
+                                    <td>40′</td>
+                                    <td>1°</td>
+                                    <td>36</td>
+                                    <td>I — XXXVI</td>
+                                </tr>
+                                <tr>
+                                    <td>1:100 000</td>
+                                    <td>20′</td>
+                                    <td>30′</td>
+                                    <td>144</td>
+                                    <td>1 — 144</td>
+                                </tr>
+                                <tr>
+                                    <td>1:50 000</td>
+                                    <td>10′</td>
+                                    <td>15′</td>
+                                    <td>4</td>
+                                    <td>А, Б, В, Г</td>
+                                </tr>
+                                <tr>
+                                    <td>1:25 000</td>
+                                    <td>5′</td>
+                                    <td>7′30″</td>
+                                    <td>4</td>
+                                    <td>а, б, в, г</td>
+                                </tr>
+                                <tr>
+                                    <td>1:10 000</td>
+                                    <td>2′30″</td>
+                                    <td>3′45″</td>
+                                    <td>4</td>
+                                    <td>1, 2, 3, 4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="info-note">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                            <p>Обозначение листа любого масштаба строится путём последовательного добавления к обозначению листа 1:1 000 000 соответствующих обозначений при каждом делении.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 7: Пример -->
+            <div class="expandable-section">
+                <div class="expandable-header" onclick="toggleSection(this)">
+                    <div class="expandable-icon green">
+                        <i data-lucide="calculator" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="expandable-title">ПРИМЕР РАСЧЁТА</div>
+                        <div class="expandable-subtitle">Вычисление для трапеции масштаба 1:50 000</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="expandable-arrow w-6 h-6"></i>
+                </div>
+                <div class="expandable-body">
+                    <div class="expandable-body-inner">
+                        <p class="text-slate-600 mb-4 leading-relaxed">
+                            Пусть требуется вычислить площадь и размеры рамок сфероидической трапеции масштаба <strong>1:50 000</strong>, в пределах которой расположена точка с координатами:
+                        </p>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Исходные данные</div>
+                            <div class="formula-line">
+                                B = 57° 54′ 30,9335″
+                            </div>
+                            <div class="formula-line">
+                                L = 51° 19′ 16,4140″
+                            </div>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-4">1. Определение координат рамок</h3>
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            Для масштаба 1:50 000 лист ограничен параллелями с разностью широт 10′ и меридианами с разностью долгот 15′. Определим координаты рамок трапеции:
+                        </p>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Координаты рамок трапеции</div>
+                            <div class="formula-line">
+                                B₁ = 57° 50′ 00″ &nbsp; (южная рамка)
+                            </div>
+                            <div class="formula-line">
+                                B₂ = 58° 00′ 00″ &nbsp; (северная рамка)
+                            </div>
+                            <div class="formula-line">
+                                L₁ = 51° 15′ 00″ &nbsp; (западная рамка)
+                            </div>
+                            <div class="formula-line">
+                                L₂ = 51° 30′ 00″ &nbsp; (восточная рамка)
+                            </div>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-4">2. Определение номенклатуры</h3>
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            Лист 1:1 000 000: ряд О (56°—60°), колонна 39 (48°—54°) → <strong>О-39</strong><br>
+                            Лист 1:100 000: №79 → <strong>О-39-79</strong><br>
+                            Лист 1:50 000: четверть Б → <strong>О-39-79-Б</strong>
+                        </p>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-4">3. Вычисление площади</h3>
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            Используя формулу (1) или (2) для эллипсоида Красовского (a = 6 378 245 м, e² = 0,0066934216), получаем:
+                        </p>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Результат</div>
+                            <div class="formula-line">
+                                P ≈ 275,0627 км²
+                            </div>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-slate-900 mb-3 mt-4">4. Вычисление размеров рамок</h3>
+                        <p class="text-slate-600 mb-3 leading-relaxed">
+                            Вычислив радиусы кривизны N₁, N₂ и M<sub>ср</sub> и подставив в формулы для a₁, a₂, c′ и d, получаем:
+                        </p>
+
+                        <div class="formula-card">
+                            <div class="formula-title">Размеры рамок на карте (масштаб 1:50 000)</div>
+                            <div class="formula-line">
+                                a₁ = 29,7042 см &nbsp; (южная рамка)
+                            </div>
+                            <div class="formula-line">
+                                a₂ = 29,5669 см &nbsp; (северная рамка)
+                            </div>
+                            <div class="formula-line">
+                                c′ = 37,1260 см &nbsp; (западная и восточная рамки)
+                            </div>
+                            <div class="formula-line">
+                                d = 45,5037 см &nbsp; (диагональ)
+                            </div>
+                        </div>
+
+                        <div class="info-note">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                            <p>Полученные размеры соответствуют ожидаемым: стороны трапеции на карте масштаба 1:50 000 составляют приблизительно 30 × 37 см, что является стандартным размером листа для данного масштаба.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+<div id="pdfReportHost" class="fixed left-[-9999px] top-0" aria-hidden="true"></div>
+
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <span class="text-2xl font-bold">
+                         <span class="text-geo-orange">GEO</span><span class="text-geo-blue">POINT</span>
+                    </span>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-4 mb-6">
+                        Профессиональные онлайн-калькуляторы для геодезических расчётов на эллипсоидах WGS-84, ГСК-2011, ПЗ-90.11 и Красовского. Точность, скорость и удобство.
+                    </p>
+                </div>
+                
+                <div>
+                     <h4 class="text-lg font-bold mb-6">Навигация</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="Главная страница.html" class="hover:text-white transition-colors">Главная</a></li>
+                        <li><a href="Главная страница.html#calculators" class="hover:text-white transition-colors">Калькуляторы</a></li>
+                        <li><a href="Теория.html" class="hover:text-white transition-colors">Теория</a></li>
+                        <li><a href="О проекте.html" class="hover:text-white transition-colors">О проекте</a></li>
+                        <li><a href="Справка.html" class="hover:text-white transition-colors">Справка</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Калькуляторы</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="direct.html" class="hover:text-white transition-colors">Прямая геодезическая задача</a></li>
+                        <li><a href="inverse.html" class="hover:text-white transition-colors">Обратная геодезическая задача</a></li>
+                        <li><a href="converter.html" class="hover:text-white transition-colors">Преобразование координат</a></li>
+                        <li><a href="Площадь и размеры сфероид. трапеции.html" class="hover:text-white transition-colors">Площадь и размеры рамок сфероидической трапеции</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Дипломный проект, СГУГиТ.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm">© 2026 GEOPOINT. Все права защищены.</p>
+                <p class="text-gray-500 text-sm flex items-center gap-2">
+                    Сделано с <i data-lucide="heart" class="w-4 h-4 text-geo-orange fill-geo-orange"></i> к геодезии
+                </p>
+            </div>
+        </div>
+    </footer>
+
+
+    <script>
+        function toggleSection(header) {
+            const section = header.closest('.expandable-section');
+            const isOpen = section.classList.contains('open');
+            
+            // Close all other sections in the same container
+            const container = section.parentElement;
+            container.querySelectorAll('.expandable-section.open').forEach(openSection => {
+                if (openSection !== section) {
+                    openSection.classList.remove('open');
+                }
+            });
+
+            // Toggle current section
+            if (isOpen) {
+                section.classList.remove('open');
+            } else {
+                section.classList.add('open');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
+
